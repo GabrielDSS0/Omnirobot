@@ -1,0 +1,10 @@
+{
+    "uri": "ws://localhost:8000/showdown/websocket",
+    "username": "",
+    "password": "",
+    "avatar": "1",
+    "rooms": [],
+    "prefix": "@",
+    "owner": ""
+
+}

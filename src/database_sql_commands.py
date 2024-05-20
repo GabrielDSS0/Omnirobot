@@ -1,0 +1,235 @@
+from src.database_command import execute_sql_command
+
+from showdown.utils import name_to_id
+
+CREATE_TABLE_ROOM = """
+CREATE TABLE IF NOT EXISTS tbl_room (
+idRoom serial PRIMARY KEY NOT NULL,
+name varchar(40) NOT NULL,
+name_id varchar(40) NOT NULL,
+timer_mq real
+)
+"""
+
+CREATE_TABLE_USER = """
+CREATE TABLE IF NOT EXISTS tbl_user (
+idUser serial PRIMARY KEY NOT NULL,
+name varchar(20) NOT NULL,
+name_id varchar(20) NOT NULL
+)
+"""
+
+CREATE_TABLE_LEADERBOARD = """
+CREATE TABLE IF NOT EXISTS tbl_leaderboard (
+idRoom serial NOT NULL,
+idUser serial NOT NULL,
+points real,
+CONSTRAINT fk_ID_Room FOREIGN KEY (idRoom)
+REFERENCES tbl_room(idRoom),
+CONSTRAINT fk_ID_User FOREIGN KEY (idUser)
+REFERENCES tbl_user(idUser)
+)
+"""
+
+CREATE_TABLE_DP_GAME = """
+CREATE TABLE IF NOT EXISTS tbl_dp_game (
+idGame serial PRIMARY KEY NOT NULL,
+subroom_name varchar(60) NOT NULL,
+host_name varchar(20) NOT NULL,
+host_name_id varchar(20) NOT NULL
+)
+"""
+
+CREATE_TABLE_DP_TEAM = """
+CREATE TABLE IF NOT EXISTS tbl_dp_team (
+idTeam serial PRIMARY KEY NOT NULL,
+name VARCHAR(15) NOT NULL
+)
+"""
+
+CREATE_TABLE_DP_PLAYER = """
+CREATE TABLE IF NOT EXISTS tbl_dp_player (
+idPlayer serial PRIMARY KEY NOT NULL,
+idGame serial NOT NULL,
+idTeam serial NOT NULL,
+name varchar(20) NOT NULL,
+name_id varchar(20) NOT NULL,
+CONSTRAINT fk_ID_Game FOREIGN KEY (idGame)
+REFERENCES tbl_dp_game(idGame),
+CONSTRAINT fk_ID_Team FOREIGN KEY (idTeam)
+REFERENCES tbl_dp_team(idTeam)
+)
+"""
+
+CREATE_TABLE_DP_CLASS = """
+CREATE TABLE IF NOT EXISTS tbl_dp_class (
+idClass serial PRIMARY KEY NOT NULL,
+idPlayer serial NOT NULL,
+class_name varchar(20) NOT NULL,
+class_name_id varchar(20) NOT NULL,
+stat_hp real NOT NULL,
+stat_shield real NOT NULL,
+stat_atk real NOT NULL,
+stat_tc real NOT NULL,
+stat_td real NOT NULL,
+levelup_atk real NOT NULL,
+levelup_td real NOT NULL,
+levelup_tc real NOT NULL,
+keywords text,
+effects text,
+CONSTRAINT fk_ID_Player FOREIGN KEY (idPlayer)
+REFERENCES tbl_dp_player (idPlayer)
+)
+"""
+
+CREATE_TABLE_DP_MOVE = """
+CREATE TABLE IF NOT EXISTS tbl_dp_move (
+idMove serial PRIMARY KEY NOT NULL,
+idClass serial NOT NULL,
+name varchar(25) NOT NULL,
+name_id varchar(25) NOT NULL,
+target boolean NOT NULL,
+priority real NOT NULL,
+cooldown integer,
+danos text,
+efeitos text,
+CONSTRAINT fk_ID_Class FOREIGN KEY (idClass)
+REFERENCES tbl_dp_class (idClass)
+)
+"""
+
+class Commands_SQL():
+    def __init__(self) -> None:
+        self.command: str = ""
+        self.params: tuple = ()
+    
+    def create_table_room(self):
+        self.params = ()
+        self.command = CREATE_TABLE_ROOM
+        self.call_execute_sql_command()
+    
+    def create_table_user(self):
+        self.params = ()
+        self.command = CREATE_TABLE_USER
+        self.call_execute_sql_command()
+    
+    def create_table_lb(self):
+        self.params = ()
+        self.command = CREATE_TABLE_LEADERBOARD
+        self.call_execute_sql_command()
+    
+    def create_table_dp_game(self):
+        self.params = ()
+        self.command = CREATE_TABLE_DP_GAME
+        self.call_execute_sql_command()
+    
+    def create_table_dp_team(self):
+        self.params = ()
+        self.command = CREATE_TABLE_DP_TEAM
+        self.call_execute_sql_command()
+    
+    def create_table_dp_player(self):
+        self.params = ()
+        self.command = CREATE_TABLE_DP_PLAYER
+        self.call_execute_sql_command()
+    
+    def create_table_dp_class(self):
+        self.params = ()
+        self.command = CREATE_TABLE_DP_CLASS
+        self.call_execute_sql_command()
+    
+    def create_table_dp_move(self):
+        self.params = ()
+        self.command = CREATE_TABLE_DP_MOVE
+        self.call_execute_sql_command()
+    
+    def create_all_tables(self):
+        self.params = ()
+        commands = [CREATE_TABLE_ROOM,
+                         CREATE_TABLE_USER,
+                         CREATE_TABLE_LEADERBOARD,
+                         CREATE_TABLE_DP_GAME,
+                         CREATE_TABLE_DP_TEAM,
+                         CREATE_TABLE_DP_PLAYER,
+                         CREATE_TABLE_DP_CLASS,
+                         CREATE_TABLE_DP_MOVE]
+    
+        for command in commands:
+            self.command = command
+            self.call_execute_sql_command()
+
+    def insert_room(self, roomname: str):
+        roomname_id = name_to_id(roomname)
+        timer_mq_default = 12
+        self.params = (roomname, roomname_id, timer_mq_default)
+        self.command = """
+        INSERT INTO tbl_room (name, name_id timer_mq) 
+        VALUES (%s,%s,%s);
+        """
+        self.call_execute_sql_command()
+
+    def delete_room(self, roomname_id: str):
+        self.params = ()
+        self.command = f"""
+        DELETE FROM tbl_room WHERE name_id = {roomname_id}
+        """
+        self.call_execute_sql_command()
+
+    def insert_user(self, username: str):
+        username_id = name_to_id(username)
+        self.params = (username, username_id)
+        self.command = """
+        INSERT INTO tbl_user (name, name_id) 
+        VALUES (%s,%s);
+        """
+        self.call_execute_sql_command()
+    
+    def delete_user(self, username_id: str):
+        self.params = ()
+        self.command = f"""
+        DELETE FROM tbl_user WHERE name_id = {username_id}
+        """
+
+    def insert_lb(self, roomID: int, userID: int, points: float):
+        roomID = str(roomID)
+        self.params = (roomID, userID, points)
+        self.command = """
+        INSERT INTO tbl_leaderboard (idRoom, idUser, points)
+        VALUES (%s,%s,%s);
+        """
+        self.call_execute_sql_command()
+
+    def insert_dp_game(self, subroom_name: str, host_name: str):
+        host_name_id = name_to_id(host_name)
+        self.params = (subroom_name, host_name, host_name_id)
+        self.command = """
+        INSERT INTO tbl_dp_game (subroom_name, host_name, host_name_id)
+        VALUES (%s,%s, %s)
+    """
+        self.call_execute_sql_command()
+
+    def insert_player_dp(self, idClass: int, idGame: int, username: str):
+        idClass = str(idClass)
+        idGame = str(idGame)
+        username_id = name_to_id(username)
+        self.params = (idClass, idGame, username, username_id)
+        self.command = """
+        INSERT INTO tbl_player_dp (idClass, idGame, name, name_id) 
+        VALUES (%s,%s,%s,%s);
+    """
+        self.call_execute_sql_command()
+
+    def insert_class_dp(self, class_name: str, stats: list):
+        class_name_id = name_to_id(class_name)
+        self.params = (class_name, class_name_id)
+        for stat in stats:
+            stat = str(stat)
+            self.params += (stat,)
+        self.command = """
+        INSERT INTO tbl_class_dp (class_name, class_name_id, stat_hp, stat_shield, stat_atk, stat_tc, stat_td, levelup_atk, levelup_td, levelup_tc)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    """
+        self.call_execute_sql_command()
+
+    def call_execute_sql_command(self):
+        execute_sql_command(self.command, self.params)

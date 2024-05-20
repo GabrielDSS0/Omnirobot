@@ -1,0 +1,4 @@
+showdownpy==0.1.5
+websockets==12.0
+psycopg2==2.9.9
+requests==2.31.0
