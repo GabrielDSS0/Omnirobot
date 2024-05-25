@@ -11,7 +11,7 @@ class Control():
         self.msgType = ""
         self.commandParams = []
         self.room = ""
-    
+
     def determinate_pm_or_room(self):
         if len(self.msgSplited) > 4:
             if self.msgSplited[1] == "pm":

@@ -44,7 +44,7 @@ class GameCommands():
 
         self.html += f'<div class="infobox"><center><font size="4">{self.question}</font><br><br><table width="100%" frame="box" rules="all" cellpadding="10"><tbody>'
 
-        self.cursor.execute(f"""SELECT timer_mq FROM tbl_room WHERE name_id = "{self.room}"
+        self.cursor.execute(f"""SELECT timer_mq FROM tbl_room WHERE name_id = '{self.room}'
         """)
 
         timer = self.cursor.fetchall()
@@ -56,7 +56,7 @@ class GameCommands():
 
         self.timeToFinish = threading.Timer(10 * 60, self.finishQuestion)
         self.timeToFinish.start()
-    
+
     async def cancel(self):
         self.questionFinished = True
         return respondPM(self.senderID, "Questão cancelada.", self.websocket)

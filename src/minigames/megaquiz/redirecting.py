@@ -68,15 +68,8 @@ class RedirectingFunction():
             inst.redirect_command(inst, self.command)
 
         elif commands_mq[self.command]['perm'] == 'general':
-            if self.msgType == 'pm':
-                if self.room in rooms:
-                    inst = OtherCommands()
-                    inst.redirect_command(inst, self.command)
-                else:
-                    await self.websocket.send(f"|/pm {self.senderID}, O bot não está nessa room.")
-            else:
-                inst = OtherCommands()
-                inst.redirect_command(inst, self.command)
+            inst = OtherCommands()
+            inst.redirect_command(inst, self.command)
 
         return self.return_question()
 

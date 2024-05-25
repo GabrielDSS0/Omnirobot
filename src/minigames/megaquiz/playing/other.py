@@ -1,6 +1,5 @@
-from showdown.utils import name_to_id
-
 from config import prefix
+
 from src.sending import *
 from src.vars import Varlist
 
@@ -23,42 +22,33 @@ class OtherCommands():
 
     def defTimer(self):
         time = self.commandParams[0]
-        if time.isdigit():
-            self.timer = float(time)
-            self.cursor.execute(f"""
-            SELECT name FROM tbl_room WHERE name_id = "{self.room}"
-            """)
-
-            room = self.cursor.fetchall()
-
-            if room:
-                self.cursor.execute(f"""UPDATE tbl_room SET timer = "{self.timer}" WHERE name_id = "{self.room}"
-                """)
-            else:
-                respondPM(self.senderID, "Sala não presente dentre as que o bot está.", self.websocket)
-
-            self.db.commit()
-
-            respond(self.msgType, f"O tempo foi alterado para {time} segundos!", self.websocket, self.senderID, self.room)
-        else:
-            respond(self.msgType, "Digite um tempo válido!", self.websocket, self.senderID, self.room)
+        self.cursor.execute(f"""UPDATE tbl_room SET timer = "{self.timer}" WHERE name_id = '{self.room}'
+        """)
+        self.db.commit()
+        respond(self.msgType, f"O tempo foi alterado para {time} segundos!", self.websocket, self.senderID, self.room)
     
     def addpoints(self, newPoints=1):
         username_id = self.senderID
 
-        self.cursor.execute(f"""SELECT idUser FROM tbl_leaderboard WHERE idUser IN (SELECT idUser FROM tbl_user WHERE name_id = {username_id})""")
+        self.cursor.execute(f"""SELECT idUser FROM tbl_leaderboard WHERE idUser IN (SELECT idUser FROM tbl_user WHERE name_id = '{username_id}')
+        """)
 
         userID = self.cursor.fetchall()
         user = userID[0][0]
-        self.cursor.execute(f"""SELECT points FROM tbl_leaderboard WHERE idUser = {user}""")
+        self.cursor.execute(f"""SELECT points FROM tbl_leaderboard WHERE idUser = '{user}'
+        """)
+
         points = self.cursor.fetchall()[0][0] + newPoints
 
         if userID:
-            self.cursor.execute(f"""UPDATE tbl_leaderboard SET points = {points} WHERE idUser = "{user}" and roomNAME = "{self.room}"
+            self.cursor.execute(f"""UPDATE tbl_leaderboard SET points = {points} WHERE idUser = '{user}' and roomNAME = '{self.room}'
             """)
         else:
-            self.cursor.execute(f"""SELECT idRoom FROM tbl_leaderboard WHERE idRoom IN (SELECT idRoom FROM tbl_room WHERE name_id = {self.room}""")
-            self.cursor.execute(f"""INSERT INTO tbl_leaderboard (idUser, idRoom, points) VALUES (?,?,?)""", (self.room, user, points))
+            self.cursor.execute(f"""SELECT idRoom FROM tbl_leaderboard WHERE idRoom IN (SELECT idRoom FROM tbl_room WHERE name_id = '{self.room}'
+            """)
+            
+            self.cursor.execute(f"""INSERT INTO tbl_leaderboard (idUser, idRoom, points) VALUES (?,?,?)
+            """, (self.room, user, points))
 
         if self.command == "addpoints":
             respond(self.msgType, "Pontos adicionados!", self.websocket, self.senderID, self.room)
@@ -73,22 +63,22 @@ class OtherCommands():
         except:
             return respond(self.msgType, f"Uso do comando: {prefix}rpoints [usuario], [pontos], [sala]", self.websocket, self.senderID, self.room)
 
-        self.cursor.execute(f"""SELECT idUser FROM tbl_leaderboard WHERE idUser IN (SELECT idUser FROM tbl_user WHERE name_id = {username_id})""")
+        self.cursor.execute(f"""SELECT idUser FROM tbl_leaderboard WHERE idUser IN (SELECT idUser FROM tbl_user WHERE name_id = '{username_id}')
+        """)
 
         userID = self.cursor.fetchall()
         user = userID[0][0]
-        self.cursor.execute(f"""SELECT points FROM tbl_leaderboard WHERE idUser = {user}""")
+        self.cursor.execute(f"""SELECT points FROM tbl_leaderboard WHERE idUser = '{user}'
+        """)
+
         points = self.cursor.fetchall()[0][0] - remPoints
 
-        if user:
-            self.cursor.execute(f"""UPDATE roomLB SET points = {points} WHERE user = "{user}" and roomNAME = "{self.room}"
-            """)
-            if points <= 0:
+        self.cursor.execute(f"""UPDATE roomLB SET points = {points} WHERE user = '{user}' and roomNAME = '{self.room}'
+        """)
+        if points <= 0:
                 self.cursor.execute(f"""
-                DELETE FROM roomLB WHERE idUser = "{user}" and roomNA = "{self.room}"
+                DELETE FROM roomLB WHERE idUser = '{user}' and roomNA = '{self.room}'
                 """)
-        else:
-            return respond(self.msgType, "O usuário não tem pontos para serem removidos.", self.websocket, self.senderID, self.room)
 
         if self.command == "rpoints":
             respond(self.msgType, "Pontos removidos!", self.websocket, self.senderID, self.room)
@@ -96,13 +86,13 @@ class OtherCommands():
         self.db.commit()
 
     def clearpoints(self):
-        self.cursor.execute(f"""DELETE FROM roomLB WHERE roomNAME = "{self.room}"
+        self.cursor.execute(f"""DELETE FROM roomLB WHERE roomNAME = '{self.room}'
         """)
         self.db.commit()
         respond(self.msgType, "Pontos da sala limpos!", self.websocket, self.senderID, self.room)
     
     def leaderboard(self):
-        self.cursor.execute(f"""SELECT * FROM roomLB WHERE roomNAME = "{self.room}"
+        self.cursor.execute(f"""SELECT * FROM roomLB WHERE roomNAME = '{self.room}'
         """)
         lb = {}
         htmlLB = """<div class="infobox"> <h3> Leaderboard </h3> <hr>
