@@ -41,8 +41,6 @@ class RedirectingFunction():
             elif permission == "INVALIDROOM":
                 await self.websocket.send(f"|/pm {self.senderID}, O bot não está nessa room.")
                 return self.return_question()
-        
-        print(self.commandParams)
 
         if commands_mq[self.command]['type'] == 'pm' and self.msgType == 'room':
             await self.websocket.send(f"|/pm {self.senderID}, Este comando deve ser executado somente por PM.")

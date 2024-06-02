@@ -98,15 +98,13 @@ class GameCommands():
         if self.currentQuestion:
                 self.usersAnswered.append(self.senderID)
                 answer = name_to_id(self.commandParams[-1])
-                print(answer)
-                print(self.answer)
                 if answer == name_to_id(self.answer):
                     points += 1
                     self.otherCommands.sender = self.sender
                     self.otherCommands.senderID = self.senderID
                     self.otherCommands.command = ""
-                    self.otherCommands.commandParams = [self.sender, points, self.room]
-                    await self.otherCommands.addpoints()
+                    self.otherCommands.addpoints(fromRespond=True)
+
                     if self.sender not in self.usersPointers:
                         self.usersPointers[self.sender] = points
                     else:
@@ -125,8 +123,7 @@ class GameCommands():
         threads.append(threading.Timer(5, respondRoom, args=["E a resposta era...", self.room]))
         threads.append(threading.Timer(10, respondRoom, args=[f"/wall {self.answer}!", self.room]))
         threads.append(threading.Timer(20, respondRoom, args=[f"Pontuadores: {', '.join(self.usersPointers)}", self.room]))
-
-        #threads.append(threading.Timer(30, self.otherCommands.redirect_command, args=[self.otherCommands, "leaderboard"]))
+        threads.append(threading.Timer(30, self.otherCommands.leaderboard, args=[True]))
         for thread in threads:
             thread.start()
 

@@ -1,7 +1,7 @@
 from config import prefix
 
 from src.sending import *
-from src.vars import Varlist as vl
+from src.vars import Varlist
 
 class OtherCommands():
     def __init__(self):
@@ -11,6 +11,8 @@ class OtherCommands():
         self.cursor = Varlist.cursor
         self.msgType = Varlist.msgType
         self.room = Varlist.room
+
+        self.sql_commands = Varlist.sql_commands
 
     def redirect_command(self, inst, name_func: str):
         self.sender = Varlist.sender
@@ -22,35 +24,36 @@ class OtherCommands():
 
     def definetimer(self):
         timer = self.commandParams[-1]
-        vl.sql_commands.update_timer(timer, self.room)
+        self.sql_commands.update_timer(timer, self.room)
         respond(self.msgType, f"O tempo foi alterado para {timer} segundos!", self.senderID, self.room)
     
-    def addpoints(self, newPoints=1):
+    def addpoints(self, newPoints=1, fromRespond=False):
         points_receiver = self.sender
         username_id = self.senderID
 
-        idRoom = vl.sql_commands.select_idroom_from_leaderboard(self.room)[0][0]
-        idUser = vl.sql_commands.select_iduser_from_leaderboard(username_id)[0][0]
+        idRoom_fetch = self.sql_commands.select_idroom_by_nameid(self.room)
+        idUser_fetch = self.sql_commands.select_iduser_by_nameid(username_id)
 
-        userID = self.cursor.fetchall()
+        room = idRoom_fetch[0][0]
 
-        if userID:
-            user = userID[0][0]
-            vl.sql_commands.select_userpoints_leaderboard(idUser, idRoom)
+        if idUser_fetch:
+            user = idUser_fetch[0][0]
 
-            points = self.cursor.fetchall()[0][0] + newPoints
-
-            vl.sql_commands.update_userpoints_leaderboard(points, idUser, idRoom)
+            user_room_lb = self.sql_commands.select_userpoints_leaderboard(user, room)
+            
+            if user_room_lb:
+                points = user_room_lb[0][0] + newPoints
+                self.sql_commands.update_userpoints_leaderboard(points, user, room)
+            else:
+                self.sql_commands.insert_leaderboard(user, room, newPoints)
         else:
-            vl.sql_commands.insert_user(points_receiver)
-            idUser = vl.sql_commands.select_user_by_nameid(username_id)[0][0]
+            self.sql_commands.insert_user(points_receiver)
+            user = self.sql_commands.select_iduser_by_nameid(username_id)[0][0]
 
-            vl.insert_leaderboard(idUser, idRoom, newPoints)
+            self.sql_commands.insert_leaderboard(user, room, newPoints)
 
-        if self.command == "addpoints":
+        if not fromRespond:
             respond(self.msgType, "Pontos adicionados!", self.senderID, self.room)
-
-        self.db.commit()
 
     def removepoints(self, remPoints=1):
         username_id = self.senderID
@@ -88,15 +91,16 @@ class OtherCommands():
         self.db.commit()
         respond(self.msgType, "Pontos da sala limpos!", self.senderID, self.room)
     
-    def leaderboard(self):
-        self.cursor.execute(f"""SELECT * FROM roomLB WHERE roomNAME = '{self.room}'
-        """)
+    def leaderboard(self, inQuestion=False):
+        idRoom = self.sql_commands.select_idroom_by_nameid(self.room)[0][0]
+        lb_fetch = self.sql_commands.select_all_leaderboard(idRoom)
         lb = {}
         htmlLB = """<div class="infobox"> <h3> Leaderboard </h3> <hr>
         """
-        for data in self.cursor.fetchall():
-            user = data[1]
-            points = data[3]
+        for data in lb_fetch:
+            userID = data[1]
+            user = self.sql_commands.select_usernameid_by_iduser(userID)[0][0]
+            points = data[2]
             if int(points) == points:
                 points = int(points)
             lb[user] = points
@@ -110,5 +114,8 @@ class OtherCommands():
                 htmlLB += ','
 
         htmlLB += "</hr></div>"
+
+        if inQuestion:
+            self.msgType = "room"
 
         respond(self.msgType, f"/addhtmlbox {htmlLB}", self.senderID, self.room)

@@ -31,4 +31,4 @@ def respond(msgType, message, user=None, room=None):
     if msgType == "pm":
         respondPM(user, message, websocket)
     elif msgType == "room":
-        respondRoom(message, websocket, room)
+        respondRoom(message, room)

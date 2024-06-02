@@ -158,7 +158,7 @@ class Commands_SQL():
             self.call_execute_sql_command()
 
     def insert_room(self, roomname_id: str):
-        if (self.verify_room_exists(roomname_id)):
+        if (self.select_idroom_by_nameid(roomname_id)):
             return
         timer_mq_default = 12
         self.params = (roomname_id, timer_mq_default)
@@ -168,7 +168,7 @@ class Commands_SQL():
         """
         self.call_execute_sql_command()
     
-    def verify_room_exists(self, roomname_id: str):
+    def select_idroom_by_nameid(self, roomname_id: str):
         self.params = ()
         self.command = f"""
         SELECT idRoom FROM tbl_room WHERE name_id = '{roomname_id}'
@@ -203,10 +203,16 @@ class Commands_SQL():
         """
         self.call_execute_sql_command()
     
-    def select_user_by_nameid(self, username_id: str):
+    def select_iduser_by_nameid(self, username_id: str):
         self.params = ()
         self.command = f"""
         SELECT idUser FROM tbl_user WHERE name_id = '{username_id}'
+        """
+        return self.call_execute_sql_query()
+    
+    def select_usernameid_by_iduser(self, idUser: int):
+        self.params = ()
+        self.command = f"""SELECT name_id FROM tbl_user WHERE idUser = {idUser}
         """
         return self.call_execute_sql_query()
     
@@ -218,13 +224,20 @@ class Commands_SQL():
         self.call_execute_sql_command()
     
     def insert_leaderboard(self, idUser: int, idRoom: int, points: float):
-        params = (idUser, idRoom, points)
+        self.params = (idUser, idRoom, points)
         self.command = """INSERT INTO tbl_leaderboard (idUser, idRoom, points) VALUES (%s,%s,%s)
         """
+        self.call_execute_sql_command()
+    
+    def select_all_leaderboard(self, idRoom: int):
+        self.params = ()
+        self.command = f"""SELECT * FROM tbl_leaderboard WHERE idRoom = {idRoom}
+        """
+        return self.call_execute_sql_query()
     
     def select_userpoints_leaderboard(self, idUser: int, idRoom: int):
         self.params = ()
-        self.command = f"""SELECT points FROM tbl_leaderboard WHERE idUser = {idUser} AND WHERE idRoom = {idRoom}
+        self.command = f"""SELECT points FROM tbl_leaderboard WHERE idUser = {idUser} AND idRoom = {idRoom}
         """
         return self.call_execute_sql_query()
     
@@ -241,8 +254,13 @@ class Commands_SQL():
         return self.call_execute_sql_query()
 
     def update_userpoints_leaderboard(self, points: float, idUser: int, idRoom: int):
-        self.cursor.execute(f"""UPDATE tbl_leaderboard SET points = {points} WHERE idUser = {idUser} and idRoom = {idRoom}
+        self.params = ()
+        self.command = (f"""UPDATE tbl_leaderboard SET points = {points} WHERE idUser = {idUser} and idRoom = {idRoom}
         """)
+        self.call_execute_sql_command()
+    
+    def delete_user_from_leaderboard(self, idUser, idRoom):
+        self.params = ()
 
     def call_execute_sql_command(self):
         execute_sql_command(self.command, self.params)
