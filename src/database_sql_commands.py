@@ -1,11 +1,10 @@
-from src.database_command import execute_sql_command
+from src.database_command import execute_sql_command, execute_sql_query
 
 from showdown.utils import name_to_id
 
 CREATE_TABLE_ROOM = """
 CREATE TABLE IF NOT EXISTS tbl_room (
 idRoom serial PRIMARY KEY NOT NULL,
-name varchar(40) NOT NULL,
 name_id varchar(40) NOT NULL,
 timer_mq real
 )
@@ -158,20 +157,40 @@ class Commands_SQL():
             self.command = command
             self.call_execute_sql_command()
 
-    def insert_room(self, roomname: str):
-        roomname_id = name_to_id(roomname)
+    def insert_room(self, roomname_id: str):
+        if (self.verify_room_exists(roomname_id)):
+            return
         timer_mq_default = 12
-        self.params = (roomname, roomname_id, timer_mq_default)
+        self.params = (roomname_id, timer_mq_default)
         self.command = """
-        INSERT INTO tbl_room (name, name_id timer_mq) 
+        INSERT INTO tbl_room (name_id, timer_mq) 
         VALUES (%s,%s,%s);
         """
         self.call_execute_sql_command()
+    
+    def verify_room_exists(self, roomname_id: str):
+        self.params = ()
+        self.command = f"""
+        SELECT idRoom FROM tbl_room WHERE name_id = '{roomname_id}'
+        """
+        return self.call_execute_sql_query()
 
     def delete_room(self, roomname_id: str):
         self.params = ()
         self.command = f"""
         DELETE FROM tbl_room WHERE name_id = {roomname_id}
+        """
+        self.call_execute_sql_command()
+    
+    def select_timer_from_room(self, roomname_id):
+        self.params = ()
+        self.command = f"""SELECT timer_mq FROM tbl_room WHERE name_id = '{roomname_id}'
+        """
+        return self.call_execute_sql_query()
+
+    def update_timer(self, timer: float, room_id: str):
+        self.params = ()
+        self.command = f"""UPDATE tbl_room SET timer_mq = '{timer}' WHERE name_id = '{room_id}'
         """
         self.call_execute_sql_command()
 
@@ -184,52 +203,49 @@ class Commands_SQL():
         """
         self.call_execute_sql_command()
     
+    def select_user_by_nameid(self, username_id: str):
+        self.params = ()
+        self.command = f"""
+        SELECT idUser FROM tbl_user WHERE name_id = '{username_id}'
+        """
+        return self.call_execute_sql_query()
+    
     def delete_user(self, username_id: str):
         self.params = ()
         self.command = f"""
         DELETE FROM tbl_user WHERE name_id = {username_id}
         """
-
-    def insert_lb(self, roomID: int, userID: int, points: float):
-        roomID = str(roomID)
-        self.params = (roomID, userID, points)
-        self.command = """
-        INSERT INTO tbl_leaderboard (idRoom, idUser, points)
-        VALUES (%s,%s,%s);
+        self.call_execute_sql_command()
+    
+    def insert_leaderboard(self, idUser: int, idRoom: int, points: float):
+        params = (idUser, idRoom, points)
+        self.command = """INSERT INTO tbl_leaderboard (idUser, idRoom, points) VALUES (%s,%s,%s)
         """
-        self.call_execute_sql_command()
+    
+    def select_userpoints_leaderboard(self, idUser: int, idRoom: int):
+        self.params = ()
+        self.command = f"""SELECT points FROM tbl_leaderboard WHERE idUser = {idUser} AND WHERE idRoom = {idRoom}
+        """
+        return self.call_execute_sql_query()
+    
+    def select_iduser_from_leaderboard(self, username_id: str):
+        self.params = ()
+        self.command = f"""SELECT idUser FROM tbl_leaderboard WHERE idUser IN (SELECT idUser FROM tbl_user WHERE name_id = '{username_id}')
+        """
+        return self.call_execute_sql_query()
+    
+    def select_idroom_from_leaderboard(self, roomname_id: str):
+        self.params = ()
+        self.command = f"""SELECT idRoom FROM tbl_leaderboard WHERE idRoom IN (SELECT idRoom FROM tbl_room WHERE name_id = '{roomname_id}')
+        """
+        return self.call_execute_sql_query()
 
-    def insert_dp_game(self, subroom_name: str, host_name: str):
-        host_name_id = name_to_id(host_name)
-        self.params = (subroom_name, host_name, host_name_id)
-        self.command = """
-        INSERT INTO tbl_dp_game (subroom_name, host_name, host_name_id)
-        VALUES (%s,%s, %s)
-    """
-        self.call_execute_sql_command()
-
-    def insert_player_dp(self, idClass: int, idGame: int, username: str):
-        idClass = str(idClass)
-        idGame = str(idGame)
-        username_id = name_to_id(username)
-        self.params = (idClass, idGame, username, username_id)
-        self.command = """
-        INSERT INTO tbl_player_dp (idClass, idGame, name, name_id) 
-        VALUES (%s,%s,%s,%s);
-    """
-        self.call_execute_sql_command()
-
-    def insert_class_dp(self, class_name: str, stats: list):
-        class_name_id = name_to_id(class_name)
-        self.params = (class_name, class_name_id)
-        for stat in stats:
-            stat = str(stat)
-            self.params += (stat,)
-        self.command = """
-        INSERT INTO tbl_class_dp (class_name, class_name_id, stat_hp, stat_shield, stat_atk, stat_tc, stat_td, levelup_atk, levelup_td, levelup_tc)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-    """
-        self.call_execute_sql_command()
+    def update_userpoints_leaderboard(self, points: float, idUser: int, idRoom: int):
+        self.cursor.execute(f"""UPDATE tbl_leaderboard SET points = {points} WHERE idUser = {idUser} and idRoom = {idRoom}
+        """)
 
     def call_execute_sql_command(self):
         execute_sql_command(self.command, self.params)
+    
+    def call_execute_sql_query(self):
+        return execute_sql_query(self.command, self.params)

@@ -40,6 +40,7 @@ class Control():
         if self.content[0] == prefix:
             command = name_to_id(self.content.split(" ")[0].strip()[1:])
             self.commandParams = self.content.replace(f"{prefix}{command}", "").strip().split(",")
+            self.commandParams = [param.strip() for param in self.commandParams]
         else:
             return
 
@@ -65,6 +66,6 @@ class Control():
                 self.room = self.room[1:]
 
         elif self.msgType == "pm":
-            self.room = name_to_id(self.commandParams[-1])
+            self.room = name_to_id(self.commandParams[0])
         
         Varlist.room = self.room

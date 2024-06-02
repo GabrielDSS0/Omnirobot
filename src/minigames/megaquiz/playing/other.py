@@ -1,7 +1,7 @@
 from config import prefix
 
 from src.sending import *
-from src.vars import Varlist
+from src.vars import Varlist as vl
 
 class OtherCommands():
     def __init__(self):
@@ -9,59 +9,56 @@ class OtherCommands():
         self.websocket = Varlist.websocket
         self.db = Varlist.db
         self.cursor = Varlist.cursor
-        self.command = Varlist.command
-        self.commandParams = Varlist.commandParams
         self.msgType = Varlist.msgType
         self.room = Varlist.room
-        self.sender = Varlist.sender
-        self.senderID = Varlist.senderID
 
     def redirect_command(self, inst, name_func: str):
+        self.sender = Varlist.sender
+        self.senderID = Varlist.senderID
+        self.command = Varlist.command
+        self.commandParams = Varlist.commandParams
         func = getattr(inst, name_func)
         func()
 
-    def defTimer(self):
-        time = self.commandParams[0]
-        self.cursor.execute(f"""UPDATE tbl_room SET timer = "{self.timer}" WHERE name_id = '{self.room}'
-        """)
-        self.db.commit()
-        respond(self.msgType, f"O tempo foi alterado para {time} segundos!", self.websocket, self.senderID, self.room)
+    def definetimer(self):
+        timer = self.commandParams[-1]
+        vl.sql_commands.update_timer(timer, self.room)
+        respond(self.msgType, f"O tempo foi alterado para {timer} segundos!", self.senderID, self.room)
     
     def addpoints(self, newPoints=1):
+        points_receiver = self.sender
         username_id = self.senderID
 
-        self.cursor.execute(f"""SELECT idUser FROM tbl_leaderboard WHERE idUser IN (SELECT idUser FROM tbl_user WHERE name_id = '{username_id}')
-        """)
+        idRoom = vl.sql_commands.select_idroom_from_leaderboard(self.room)[0][0]
+        idUser = vl.sql_commands.select_iduser_from_leaderboard(username_id)[0][0]
 
         userID = self.cursor.fetchall()
-        user = userID[0][0]
-        self.cursor.execute(f"""SELECT points FROM tbl_leaderboard WHERE idUser = '{user}'
-        """)
-
-        points = self.cursor.fetchall()[0][0] + newPoints
 
         if userID:
-            self.cursor.execute(f"""UPDATE tbl_leaderboard SET points = {points} WHERE idUser = '{user}' and roomNAME = '{self.room}'
-            """)
+            user = userID[0][0]
+            vl.sql_commands.select_userpoints_leaderboard(idUser, idRoom)
+
+            points = self.cursor.fetchall()[0][0] + newPoints
+
+            vl.sql_commands.update_userpoints_leaderboard(points, idUser, idRoom)
         else:
-            self.cursor.execute(f"""SELECT idRoom FROM tbl_leaderboard WHERE idRoom IN (SELECT idRoom FROM tbl_room WHERE name_id = '{self.room}'
-            """)
-            
-            self.cursor.execute(f"""INSERT INTO tbl_leaderboard (idUser, idRoom, points) VALUES (?,?,?)
-            """, (self.room, user, points))
+            vl.sql_commands.insert_user(points_receiver)
+            idUser = vl.sql_commands.select_user_by_nameid(username_id)[0][0]
+
+            vl.insert_leaderboard(idUser, idRoom, newPoints)
 
         if self.command == "addpoints":
-            respond(self.msgType, "Pontos adicionados!", self.websocket, self.senderID, self.room)
+            respond(self.msgType, "Pontos adicionados!", self.senderID, self.room)
 
         self.db.commit()
 
-    def rempoints(self, remPoints=1):
+    def removepoints(self, remPoints=1):
         username_id = self.senderID
         remPoints = self.commandParams[1]
         try:
             remPoints = float(remPoints)
         except:
-            return respond(self.msgType, f"Uso do comando: {prefix}rpoints [usuario], [pontos], [sala]", self.websocket, self.senderID, self.room)
+            return respond(self.msgType, f"Uso do comando: {prefix}rpoints [usuario], [pontos], [sala]", self.senderID, self.room)
 
         self.cursor.execute(f"""SELECT idUser FROM tbl_leaderboard WHERE idUser IN (SELECT idUser FROM tbl_user WHERE name_id = '{username_id}')
         """)
@@ -81,7 +78,7 @@ class OtherCommands():
                 """)
 
         if self.command == "rpoints":
-            respond(self.msgType, "Pontos removidos!", self.websocket, self.senderID, self.room)
+            respond(self.msgType, "Pontos removidos!", self.senderID, self.room)
 
         self.db.commit()
 
@@ -89,7 +86,7 @@ class OtherCommands():
         self.cursor.execute(f"""DELETE FROM roomLB WHERE roomNAME = '{self.room}'
         """)
         self.db.commit()
-        respond(self.msgType, "Pontos da sala limpos!", self.websocket, self.senderID, self.room)
+        respond(self.msgType, "Pontos da sala limpos!", self.senderID, self.room)
     
     def leaderboard(self):
         self.cursor.execute(f"""SELECT * FROM roomLB WHERE roomNAME = '{self.room}'
@@ -114,4 +111,4 @@ class OtherCommands():
 
         htmlLB += "</hr></div>"
 
-        respond(self.msgType, f"/addhtmlbox {htmlLB}", self.websocket, self.senderID, self.room)
+        respond(self.msgType, f"/addhtmlbox {htmlLB}", self.senderID, self.room)

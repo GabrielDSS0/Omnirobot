@@ -6,6 +6,7 @@ from src.commands_list import commands_dp, commands_mq
 from src.vars import Varlist
 from src.control_pm_and_room import Control
 from src.sending import call_command
+from src.database_sql_commands import Commands_SQL
 from config import username, password, rooms, avatar
 
 from src.minigames.megaquiz.redirecting import RedirectingFunction as mq_redirect
@@ -39,6 +40,7 @@ class User():
 
                     for room in rooms:
                         await self.websocket.send(f"|/join {room}")
+                        Commands_SQL().insert_room(room)
 
                     self.loginDone = True
 
