@@ -29,6 +29,6 @@ def respondPM(user, message):
 def respond(msgType, message, user=None, room=None):
     websocket = Varlist.websocket
     if msgType == "pm":
-        respondPM(user, message, websocket)
+        respondPM(user, message)
     elif msgType == "room":
         respondRoom(message, room)

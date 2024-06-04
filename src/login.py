@@ -2,7 +2,7 @@ import json
 import requests
 import logging
 
-from src.commands_list import commands_dp, commands_mq
+from src.commands_list import commands_dp, commands_mq, commands_leaderboard
 from src.vars import Varlist
 from src.control_pm_and_room import Control
 from src.sending import call_command
@@ -10,6 +10,7 @@ from src.database_sql_commands import Commands_SQL
 from config import username, password, rooms, avatar
 
 from src.minigames.megaquiz.redirecting import RedirectingFunction as mq_redirect
+from src.leaderboard.redirecting import RedirectingFunction as lb_redirect
 
 logging.basicConfig(
         format="%(asctime)s %(message)s",
@@ -53,7 +54,9 @@ class User():
         is_command = self.control_pm_room.determinate_pm_or_room()
         if is_command:
             command = Varlist.command
-            if command in commands_mq:
+            if command in commands_leaderboard:
+                await lb_redirect().redirect_to_function()
+            elif command in commands_mq:
                 await mq_redirect().redirect_to_function()
             elif command in commands_dp:
                 pass

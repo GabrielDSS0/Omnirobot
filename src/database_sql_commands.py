@@ -164,7 +164,7 @@ class Commands_SQL():
         self.params = (roomname_id, timer_mq_default)
         self.command = """
         INSERT INTO tbl_room (name_id, timer_mq) 
-        VALUES (%s,%s,%s);
+        VALUES (%s,%s);
         """
         self.call_execute_sql_command()
     
@@ -175,14 +175,7 @@ class Commands_SQL():
         """
         return self.call_execute_sql_query()
 
-    def delete_room(self, roomname_id: str):
-        self.params = ()
-        self.command = f"""
-        DELETE FROM tbl_room WHERE name_id = {roomname_id}
-        """
-        self.call_execute_sql_command()
-    
-    def select_timer_from_room(self, roomname_id):
+    def select_timer_from_room(self, roomname_id: str):
         self.params = ()
         self.command = f"""SELECT timer_mq FROM tbl_room WHERE name_id = '{roomname_id}'
         """
@@ -193,6 +186,13 @@ class Commands_SQL():
         self.command = f"""UPDATE tbl_room SET timer_mq = '{timer}' WHERE name_id = '{room_id}'
         """
         self.call_execute_sql_command()
+
+    def delete_room(self, roomname_id: str):
+        self.params = ()
+        self.command = f"""
+        DELETE FROM tbl_room WHERE name_id = {roomname_id}
+        """
+        self.call_execute_sql_command()    
 
     def insert_user(self, username: str):
         username_id = name_to_id(username)
@@ -207,6 +207,13 @@ class Commands_SQL():
         self.params = ()
         self.command = f"""
         SELECT idUser FROM tbl_user WHERE name_id = '{username_id}'
+        """
+        return self.call_execute_sql_query()
+
+        
+    def select_username_by_iduser(self, idUser: int):
+        self.params = ()
+        self.command = f"""SELECT name FROM tbl_user WHERE idUser = {idUser}
         """
         return self.call_execute_sql_query()
     
@@ -259,7 +266,13 @@ class Commands_SQL():
         """)
         self.call_execute_sql_command()
     
-    def delete_user_from_leaderboard(self, idUser, idRoom):
+    def clear_leaderboard(self, idRoom: int):
+        self.params = ()
+        self.command = f"""DELETE FROM tbl_leaderboard WHERE idRoom = {idRoom}
+        """
+        self.call_execute_sql_command()
+    
+    def delete_user_from_leaderboard(self, idUser: int, idRoom: int):
         self.params = ()
 
     def call_execute_sql_command(self):

@@ -5,9 +5,9 @@ import random
 from showdown.utils import name_to_id
 
 from config import username, prefix
-from src.vars import Varlist as vl
+from src.vars import Varlist
 from src.sending import *
-from src.minigames.megaquiz.playing.other import *
+from src.leaderboard.commands import *
 
 class GameCommands():
     def __init__(self, host):
@@ -18,8 +18,8 @@ class GameCommands():
         self.host = host
         self.currentQuestion = False
         self.questionFinished = False
+        self.timer = 0
         self.alternativesNumber = 0
-        self.timer = 15
         self.alternatives = []
         self.fontColors = ["#008000", "#0000e6", "#cc0000", "#e0ae1b"]
         self.rooms = []
@@ -30,8 +30,10 @@ class GameCommands():
         self.html = ""
         self.question = ""
 
-        self.otherCommands = OtherCommands()
-        self.otherCommands.room = self.room
+        self.sql_commands = Varlist.sql_commands
+
+        self.leaderboardCommands = Leaderboard_Commands()
+        self.leaderboardCommands.room = self.room
 
     async def redirect_command(self, inst, name_func: str):
         self.sender = Varlist.sender
@@ -45,12 +47,7 @@ class GameCommands():
 
         self.html += f'<div class="infobox"><center><font size="4">{self.question}</font><br><br><table width="100%" frame="box" rules="all" cellpadding="10"><tbody>'
 
-        vl.sql_commands.select_timer_from_room
-
-        timer = self.cursor.fetchall()
-
-        if timer:
-            self.timer = timer[0][0]
+        self.timer = self.sql_commands.select_timer_from_room(self.room)[0][0]
 
         respondPM(self.senderID, f"Questão feita! Agora, para adicionar alternativas, digite {prefix}add (alternativa).")
 
@@ -100,10 +97,11 @@ class GameCommands():
                 answer = name_to_id(self.commandParams[-1])
                 if answer == name_to_id(self.answer):
                     points += 1
-                    self.otherCommands.sender = self.sender
-                    self.otherCommands.senderID = self.senderID
-                    self.otherCommands.command = ""
-                    self.otherCommands.addpoints(fromRespond=True)
+                    self.leaderboardCommands.sender = self.sender
+                    self.leaderboardCommands.senderID = self.senderID
+                    self.leaderboardCommands.command = ""
+                    self.leaderboardCommands.msgType = ""
+                    self.leaderboardCommands.addpoints(fromRespond=True)
 
                     if self.sender not in self.usersPointers:
                         self.usersPointers[self.sender] = points
@@ -123,7 +121,7 @@ class GameCommands():
         threads.append(threading.Timer(5, respondRoom, args=["E a resposta era...", self.room]))
         threads.append(threading.Timer(10, respondRoom, args=[f"/wall {self.answer}!", self.room]))
         threads.append(threading.Timer(20, respondRoom, args=[f"Pontuadores: {', '.join(self.usersPointers)}", self.room]))
-        threads.append(threading.Timer(30, self.otherCommands.leaderboard, args=[True]))
+        threads.append(threading.Timer(30, self.leaderboardCommands.leaderboard, args=[True]))
         for thread in threads:
             thread.start()
 
