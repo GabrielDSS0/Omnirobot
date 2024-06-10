@@ -3,10 +3,6 @@ from src.vars import Varlist
 
 class OtherCommands():
     def __init__(self):
-        self.msgSplited = Varlist.msgSplited
-        self.websocket = Varlist.websocket
-        self.db = Varlist.db
-        self.cursor = Varlist.cursor
         self.msgType = Varlist.msgType
         self.room = Varlist.room
 

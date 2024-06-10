@@ -1,6 +1,6 @@
 from config import prefix
 from src.vars import Varlist
-from src.commands_list import aliases, allCommands
+from src.commands_list import aliases, allCommands, allCommands_keys
 
 from showdown.utils import name_to_id
 
@@ -47,13 +47,16 @@ class Control():
         if command in aliases:
             command = aliases[command]
 
-        if command in allCommands:
+        if command in allCommands_keys:
             Varlist.command = command
             Varlist.commandParams = self.commandParams
         else:
             return
         
-        self.identify_room()
+        need_room = allCommands[command]['need_room']
+        
+        if need_room:
+            self.identify_room()
 
         return True
     

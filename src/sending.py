@@ -3,7 +3,6 @@ import asyncio
 from src.vars import Varlist
 
 def call_command(command):
-    websocket = Varlist.websocket
     try:
         asyncio.get_event_loop().is_running()
     except RuntimeError:
@@ -27,7 +26,6 @@ def respondPM(user, message):
     return asyncio.gather(websocket.send(f"|/pm {user}, {message}"))
 
 def respond(msgType, message, user=None, room=None):
-    websocket = Varlist.websocket
     if msgType == "pm":
         respondPM(user, message)
     elif msgType == "room":

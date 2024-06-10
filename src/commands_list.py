@@ -18,7 +18,9 @@ commands_mq = {
             'definetimer': {'params': ["sala", "tempo"], 'perm': 'adm', 'type': 'both', 'need_room': True},
         }
 
-allCommands = commands_leaderboard.keys() | commands_mq.keys() | commands_dp.keys()
+allCommands = commands_leaderboard | commands_mq | commands_dp
+
+allCommands_keys = commands_leaderboard.keys() | commands_mq.keys() | commands_dp.keys()
 
 aliases = {
     "mq": "makequestion",

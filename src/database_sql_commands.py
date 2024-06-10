@@ -274,6 +274,9 @@ class Commands_SQL():
     
     def delete_user_from_leaderboard(self, idUser: int, idRoom: int):
         self.params = ()
+        self.command = f"""DELETE FROM tbl_leaderboard WHERE idUser = {idUser} and idRoom = {idRoom}
+        """
+        self.call_execute_sql_command()
 
     def call_execute_sql_command(self):
         execute_sql_command(self.command, self.params)

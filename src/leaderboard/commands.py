@@ -1,12 +1,10 @@
+from showdown.utils import name_to_id
+
 from src.sending import *
 from src.vars import Varlist
 
 class Leaderboard_Commands():
     def __init__(self):
-        self.msgSplited = Varlist.msgSplited
-        self.websocket = Varlist.websocket
-        self.db = Varlist.db
-        self.cursor = Varlist.cursor
         self.msgType = Varlist.msgType
         self.room = Varlist.room
         self.sender = Varlist.sender
@@ -23,15 +21,17 @@ class Leaderboard_Commands():
         func()
     
     def addpoints(self, newPoints=1, fromRespond=False):
-        points_receiver = self.sender
-        username_id = self.senderID
-        
         if self.msgType:
+            points_receiver = self.commandParams[0] if self.msgType == "room" else self.commandParams[1]
+            username_id = name_to_id(points_receiver)
             newPoints = self.commandParams[-1].strip()
             try:
                 newPoints = float(newPoints)
             except:
-                newPoints = 1
+                return respond(self.msgType, "A pontuação digitada não é um número.", self.senderID, self.room)
+        else:
+            points_receiver = self.sender
+            username_id = self.senderID
 
         idRoom_fetch = self.sql_commands.select_idroom_by_nameid(self.room)
         idUser_fetch = self.sql_commands.select_iduser_by_nameid(username_id)
@@ -45,12 +45,21 @@ class Leaderboard_Commands():
             
             if user_room_lb:
                 points = user_room_lb[0][0] + newPoints
-                self.sql_commands.update_userpoints_leaderboard(points, user, room)
+                if points <= 0:
+                    self.sql_commands.delete_user_from_leaderboard(user, room)
+                else:
+                    self.sql_commands.update_userpoints_leaderboard(points, user, room)
             else:
+                if newPoints <= 0:
+                    return respond(self.msgType, "Só se pode adicionar valores de pontos maiores que 0.", self.senderID, self.room)
+
                 self.sql_commands.insert_leaderboard(user, room, newPoints)
         else:
             self.sql_commands.insert_user(points_receiver)
             user = self.sql_commands.select_iduser_by_nameid(username_id)[0][0]
+
+            if newPoints <= 0:
+                return respond(self.msgType, "Só se pode adicionar valores de pontos maiores que 0.", self.senderID, self.room)
 
             self.sql_commands.insert_leaderboard(user, room, newPoints)
 
@@ -58,14 +67,16 @@ class Leaderboard_Commands():
             respond(self.msgType, "Pontos adicionados!", self.senderID, self.room)
 
     def removepoints(self, remPoints=1):
-        username_id = self.senderID
-        
         if self.msgType:
+            points_receiver = self.commandParams[0] if self.msgType == "room" else self.commandParams[1]
+            username_id = name_to_id(points_receiver)
             remPoints = self.commandParams[-1].strip()
             try:
                 remPoints = float(remPoints)
             except:
-                remPoints = 1
+                return respond(self.msgType, "A pontuação digitada não é um número.", self.senderID, self.room)
+        else:
+            username_id = self.senderID
 
         idRoom_fetch = self.sql_commands.select_idroom_by_nameid(self.room)
         idUser_fetch = self.sql_commands.select_iduser_by_nameid(username_id)
@@ -76,14 +87,17 @@ class Leaderboard_Commands():
             user = idUser_fetch[0][0]
 
             user_room_lb = self.sql_commands.select_userpoints_leaderboard(user, room)
-            
+
             if user_room_lb:
                 points = user_room_lb[0][0] - remPoints
-                self.sql_commands.update_userpoints_leaderboard(points, user, room)
+                if points <= 0:
+                    self.sql_commands.delete_user_from_leaderboard(user, room)
+                else:
+                    self.sql_commands.update_userpoints_leaderboard(points, user, room)
             else:
-                self.sql_commands.insert_leaderboard(user, room, remPoints)
+                return respond(self.msgType, "O usuário citado não tem pontos nesta sala.", self.senderID, self.room)
         else:
-            respond(self.msgType, "O usuário citado não tem pontos nesta sala.", self.senderID, self.room)
+            return respond(self.msgType, "O usuário citado não tem pontos nesta sala.", self.senderID, self.room)
 
         respond(self.msgType, "Pontos removidos!", self.senderID, self.room)
 
@@ -97,6 +111,9 @@ class Leaderboard_Commands():
         idRoom = self.sql_commands.select_idroom_by_nameid(self.room)[0][0]
         lb_fetch = self.sql_commands.select_all_leaderboard(idRoom)
         lb = {}
+
+        if inQuestion:
+            self.msgType = "room"
 
         code = ""
 
@@ -128,7 +145,4 @@ class Leaderboard_Commands():
                     code += ','
             code += "</hr></div>"
 
-        if inQuestion:
-            self.msgType = "room"
-
-        respond(self.msgType, f"{code}", self.senderID, self.room)
+        respond(self.msgType, code, self.senderID, self.room)

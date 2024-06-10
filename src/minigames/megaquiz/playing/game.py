@@ -11,26 +11,21 @@ from src.leaderboard.commands import *
 
 class GameCommands():
     def __init__(self, host):
-        self.msgSplited = Varlist.msgSplited
-        self.websocket = Varlist.websocket
-        self.db = Varlist.db
-        self.cursor = Varlist.cursor
         self.host = host
-        self.currentQuestion = False
-        self.questionFinished = False
+        self.room = Varlist.room
         self.timer = 0
-        self.alternativesNumber = 0
         self.alternatives = []
         self.fontColors = ["#008000", "#0000e6", "#cc0000", "#e0ae1b"]
-        self.rooms = []
         self.usersAnswered = []
         self.usersPointers = {}
-        self.room = Varlist.room
         self.answer = ""
         self.html = ""
         self.question = ""
 
+        self.currentQuestion = False
+
         self.sql_commands = Varlist.sql_commands
+        self.questions = Varlist.questions
 
         self.leaderboardCommands = Leaderboard_Commands()
         self.leaderboardCommands.room = self.room
@@ -55,34 +50,45 @@ class GameCommands():
         self.timeToFinish.start()
 
     async def cancelquestion(self):
-        self.questionFinished = True
+        if not self.question:
+            return respondPM(self.senderID, "Não há uma questão ativa.")
+        self.killQuestion()
         return respondPM(self.senderID, "Questão cancelada.")
 
     async def addalternative(self):
+        if not self.question:
+            return respondPM(self.senderID, "Não há uma questão ativa.")
         alternative = self.commandParams[-1]
         color = random.choice(self.fontColors)
-        if self.alternativesNumber % 2 == 0:
+        if len(self.alternatives) % 2 == 0:
             self.html += f'<tr><td style="width: 50.00%"><center><button name="send" value="/w {username},{prefix}respond {self.room}, {self.host}, {alternative}" style=background-color:transparent;border:none;><font color="{color}" size="3"><b>{alternative}</b></font></button></center>'
         else:
             self.html += f'<td style="width: 50.00%"><center><button name="send" value="/w {username},{prefix}respond {self.room}, {self.host}, {alternative}" style=background-color:transparent;border:none;><font color="{color}" size="3"><b>{alternative}</b></font></button></center></tr>'
         self.fontColors.remove(color)
-        self.alternativesNumber += 1
         self.alternatives.append(alternative)
 
         respondPM(self.senderID, f"Alternativa feita! Se quiser colocar alguma alternativa como a correta, digite {prefix}danswer (alternativa).")
 
     async def defineanswer(self):
+        if not self.question:
+            return respondPM(self.senderID, "Não há uma questão ativa.")
         alternative = self.commandParams[-1]
         if alternative in self.alternatives:
             self.answer = alternative
             respondPM(self.senderID, f"A alternativa {alternative} foi configurada como a correta.")
+        else:
+            respondPM(self.senderID, f"A alternativa inserida não é uma das alternativas da questão.")
 
     async def showquestion(self):
+        if not self.question:
+            return respondPM(self.senderID, "Não há uma questão ativa.")
         code = f"A questão está assim:\nQuestão: {self.question}\nAlternativas: {', '.join(self.alternatives)}\nAlternativa correta: {self.answer}"
 
         respondPM(self.senderID, f"!code {code}")
 
     async def sendquestion(self):
+        if not self.question:
+            return respondPM(self.senderID, "Não há uma questão ativa.")
         self.html += "</tbody></table></center></div>"
         respondRoom(f"/addhtmlbox {self.html}", self.room)
         self.currentQuestion = True
@@ -93,6 +99,9 @@ class GameCommands():
         points = 0
 
         if self.currentQuestion:
+            if self.senderID in self.usersAnswered:
+                return respondPM(self.senderID, "Você já enviou uma resposta nesta questão.")
+            else:                
                 self.usersAnswered.append(self.senderID)
                 answer = name_to_id(self.commandParams[-1])
                 if answer == name_to_id(self.answer):
@@ -103,14 +112,10 @@ class GameCommands():
                     self.leaderboardCommands.msgType = ""
                     self.leaderboardCommands.addpoints(fromRespond=True)
 
-                    if self.sender not in self.usersPointers:
-                        self.usersPointers[self.sender] = points
-                    else:
-                        self.usersPointers[self.sender] += points
+                    self.usersPointers[self.sender] = points
 
     async def timeLimit(self):
         self.currentQuestion = False
-        self.questionFinished = True
         self.timeToFinish.cancel()
         respondRoom(f"/wall ACABOU O TEMPO!", self.room)
         await self.postQuestion()
@@ -118,13 +123,23 @@ class GameCommands():
     async def postQuestion(self):
         self.msgType = 'room'
         threads = []
-        threads.append(threading.Timer(5, respondRoom, args=["E a resposta era...", self.room]))
-        threads.append(threading.Timer(10, respondRoom, args=[f"/wall {self.answer}!", self.room]))
-        threads.append(threading.Timer(20, respondRoom, args=[f"Pontuadores: {', '.join(self.usersPointers)}", self.room]))
-        threads.append(threading.Timer(30, self.leaderboardCommands.leaderboard, args=[True]))
+
+        pre_answer_revelation = 5
+        answer_revelation = pre_answer_revelation + 5
+        score = answer_revelation + 10
+        lb_revelation = score + 10
+        threads.append(threading.Timer(pre_answer_revelation, respondRoom, args=["E a resposta era...", self.room]))
+        threads.append(threading.Timer(answer_revelation, respondRoom, args=[f"/wall {self.answer}!", self.room]))
+        threads.append(threading.Timer(score, respondRoom, args=[f"Pontuadores: {', '.join(self.usersPointers)}", self.room]))
+        threads.append(threading.Timer(lb_revelation, self.leaderboardCommands.leaderboard, args=[True]))
         for thread in threads:
             thread.start()
 
     def finishQuestion(self):
-        self.questionFinished = True
+        self.killQuestion()
         respondPM(self.host, "Acabou o prazo para formalizar a questão.")
+    
+    def killQuestion(self):
+        del self.questions[self.host][self.room]
+        if not self.questions[self.host]:
+            del self.questions[self.host]
