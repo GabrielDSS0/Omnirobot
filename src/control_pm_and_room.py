@@ -34,7 +34,15 @@ class Control():
         Varlist.content = self.content
         Varlist.msgType = self.msgType
 
-        return self.determinate_is_a_command()
+        is_command = self.determinate_is_a_command()
+        if not is_command:
+            is_invite = self.determinate_is_a_invite()
+            if not is_invite:
+                return
+            else:
+                return is_invite
+        else:
+            return is_command
 
     def determinate_is_a_command(self):
         if self.content[0] == prefix:
@@ -58,7 +66,7 @@ class Control():
         if need_room:
             self.identify_room()
 
-        return True
+        return "COMMAND"
     
     def identify_room(self):
         if self.msgType == "room":
@@ -72,3 +80,11 @@ class Control():
             self.room = name_to_id(self.commandParams[0])
         
         Varlist.room = self.room
+    
+    def determinate_is_a_invite(self):
+        invite = self.content.split(" ")
+
+        if invite[0] == "/invite":
+            return "INVITE"
+        else:
+            return

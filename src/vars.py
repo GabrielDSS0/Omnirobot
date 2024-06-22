@@ -8,6 +8,7 @@ class Varlist():
    sql_commands = None
    msgSplited: list =  []
    questions: dict = {}
+   subroomGames: dict = {}
    command: str = ""
    commandParams: list = []
    sender: str = ""

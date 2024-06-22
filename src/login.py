@@ -9,7 +9,9 @@ from src.sending import call_command
 from src.database_sql_commands import Commands_SQL
 from config import username, password, rooms, avatar
 
-from src.minigames.megaquiz.redirecting import RedirectingFunction as mq_redirect
+from src.minigames.room.megaquiz.redirecting import RedirectingFunction as mq_redirect
+from src.minigames.subroom.dp.redirecting import RedirectingFunction as dp_redirect
+from src.minigames.subroom.redirecting import joinRoom
 from src.leaderboard.redirecting import RedirectingFunction as lb_redirect
 
 logging.basicConfig(
@@ -40,23 +42,27 @@ class User():
                     call_command(self.websocket.send(f"|/avatar {avatar}"))
 
                     for room in rooms:
-                        await self.websocket.send(f"|/join {room}")
+                        call_command(self.websocket.send(f"|/join {room}"))
                         Commands_SQL().insert_room(room)
 
                     self.loginDone = True
 
             if self.loginDone:
                 await self.afterLogin()
-                
+
 
     async def afterLogin(self):
         self.control_pm_room = Control()
-        is_command = self.control_pm_room.determinate_pm_or_room()
-        if is_command:
+        cmd_or_invite = self.control_pm_room.determinate_pm_or_room()
+        
+        if cmd_or_invite == "COMMAND":
             command = Varlist.command
             if command in commands_leaderboard:
                 await lb_redirect().redirect_to_function()
             elif command in commands_mq:
                 await mq_redirect().redirect_to_function()
             elif command in commands_dp:
-                pass
+                await 
+
+        elif cmd_or_invite == "INVITE":
+            joinRoom()

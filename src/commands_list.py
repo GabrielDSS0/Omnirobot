@@ -5,7 +5,13 @@ commands_leaderboard = {
             'leaderboard': {'params': ["sala"], 'perm': 'adm', 'type': 'both', 'need_room': True},
         }
 
-commands_dp = {}
+commands_dp = {
+            'start':  {'params': [""], 'perm': 'host', 'type': 'room', 'need_room': True},
+            'defplayers':  {'params': ["jogadores"], 'perm': 'host', 'type': 'both', 'need_room': True},
+            'defclass':  {'params': ["sala", "jogador", "classe"], 'perm': 'host', 'type': 'pm', 'need_room': True},
+            'act':  {'params': ["sala", "jogador", "ação"], 'perm': 'host', 'type': 'pm', 'need_room': True},
+            'actsconfirm':  {'params': ["sala"], 'perm': 'host', 'type': 'both', 'need_room': True},
+}
 
 commands_mq = {
             'makequestion': {'params': ["sala", "pergunta"], 'perm': 'host', 'type': 'pm', 'need_room': True},
