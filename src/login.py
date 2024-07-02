@@ -62,7 +62,7 @@ class User():
             elif command in commands_mq:
                 await mq_redirect().redirect_to_function()
             elif command in commands_dp:
-                await 
+               await dp_redirect().redirect_to_function()
 
         elif cmd_or_invite == "INVITE":
             joinRoom()

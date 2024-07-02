@@ -6,7 +6,7 @@ commands_leaderboard = {
         }
 
 commands_dp = {
-            'start':  {'params': [""], 'perm': 'host', 'type': 'room', 'need_room': True},
+            'startdp':  {'params': [""], 'perm': 'host', 'type': 'room', 'need_room': True},
             'defplayers':  {'params': ["jogadores"], 'perm': 'host', 'type': 'both', 'need_room': True},
             'defclass':  {'params': ["sala", "jogador", "classe"], 'perm': 'host', 'type': 'pm', 'need_room': True},
             'act':  {'params': ["sala", "jogador", "ação"], 'perm': 'host', 'type': 'pm', 'need_room': True},

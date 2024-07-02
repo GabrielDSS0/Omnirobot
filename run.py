@@ -2,7 +2,7 @@ import asyncio
 import websockets
 import psycopg2
 
-from src.database_sql_commands import *
+from src.database_sql_commands import Commands_SQL
 from src.vars import Varlist
 from src.login import User
 from config import uri

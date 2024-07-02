@@ -1,0 +1,8 @@
+For localhost:
+
+ws://localhost:8000/showdown/websocket
+
+In the global server:
+
+ws://sim.smogon.com:8000/showdown/websocket
+wss://sim3.psim.us/showdown/websocket

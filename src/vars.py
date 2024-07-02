@@ -1,14 +1,14 @@
 from psycopg2.extensions import connection, cursor as cs
 from websockets import WebSocketClientProtocol
 
-class Varlist():
+class Varlist:
    websocket: WebSocketClientProtocol = None
    db: connection = None
    cursor: cs = None
    sql_commands = None
    msgSplited: list =  []
    questions: dict = {}
-   subroomGames: dict = {}
+   dpGames: dict = {}
    command: str = ""
    commandParams: list = []
    sender: str = ""
