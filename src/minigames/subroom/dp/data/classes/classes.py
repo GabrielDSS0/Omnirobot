@@ -4,6 +4,7 @@ class ClassDefault:
     atk: float
     cr: float
     dr: float
+    gold: float = -1
     shield: dict = {}
     positive_effects: dict = {}
     negative_effects: dict = {}
@@ -85,6 +86,7 @@ class Gambler(ClassDefault):
     atk = 40
     cr = 40
     dr = 40
+    gold = 0
 
 class Spirit(ClassDefault):
     name = "Spirit"

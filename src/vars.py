@@ -7,10 +7,11 @@ class Varlist:
    cursor: cs = None
    sql_commands = None
    msgSplited: list =  []
+   commandParams: list = []
    questions: dict = {}
    dpGames: dict = {}
+   writing: dict = {}
    command: str = ""
-   commandParams: list = []
    sender: str = ""
    senderID: str = ""
    content: str = ""

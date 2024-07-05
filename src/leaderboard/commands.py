@@ -1,4 +1,4 @@
-from showdown.utils import name_to_id
+from psclient import toID
 
 from src.sending import *
 from src.vars import Varlist
@@ -23,7 +23,7 @@ class Leaderboard_Commands():
     def addpoints(self, newPoints=1, fromRespond=False):
         if self.msgType:
             points_receiver = self.commandParams[0] if self.msgType == "room" else self.commandParams[1]
-            username_id = name_to_id(points_receiver)
+            username_id = toID(points_receiver)
             newPoints = self.commandParams[-1].strip()
             try:
                 newPoints = float(newPoints)
@@ -69,7 +69,7 @@ class Leaderboard_Commands():
     def removepoints(self, remPoints=1):
         if self.msgType:
             points_receiver = self.commandParams[0] if self.msgType == "room" else self.commandParams[1]
-            username_id = name_to_id(points_receiver)
+            username_id = toID(points_receiver)
             remPoints = self.commandParams[-1].strip()
             try:
                 remPoints = float(remPoints)

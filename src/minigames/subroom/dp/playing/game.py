@@ -4,6 +4,8 @@ from src.vars import Varlist
 from src.sending import *
 from src.leaderboard.commands import *
 from src.minigames.subroom.dp.data.classes.classes import classes_dict
+from src.minigames.subroom.dp.playing.acts.calc import ActsCalculator
+from src.minigames.subroom.dp.playing.acts.endround import PostRound
 
 class GameCommands():
     def __init__(self, host):
@@ -12,7 +14,11 @@ class GameCommands():
         self.players = []
         self.team1 = []
         self.team2 = []
-        self.playerClass = {}
+        self.playersClasses = {}
+        self.team1_classes = {}
+        self.team2_classes = {}
+
+        self.writings = Varlist.writing
 
         self.sql_commands = Varlist.sql_commands
         self.dpGames = Varlist.dpGames
@@ -46,7 +52,11 @@ class GameCommands():
         player = self.commandParams[1].strip()
         player_class = self.commandParams[-1].strip()
         player_class = classes_dict[player_class]()
-        self.playerClass[player] = player_class
+        self.playersClasses[player] = player_class
+        if player in self.team1:
+            self.team1_classes[player] = player_class
+        else:
+            self.team2_classes[player] = player_class
         respondPM(self.senderID, "Classe atribuída!")
 
     def act(self):
@@ -55,6 +65,10 @@ class GameCommands():
         targets = ""
         if len(self.commandParams) > 3:
             targets = self.commandParams[3:]
+        print(self.playersClasses)
+        act: ActsCalculator = ActsCalculator(player, act, targets, self.playersClasses)
+        call_command(act.act_calc())
 
     def actsconfirm(self):
-        pass
+        postRoundInstance: PostRound = PostRound()
+        self.writings[self.room] = postRoundInstance

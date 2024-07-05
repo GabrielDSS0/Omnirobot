@@ -21,6 +21,7 @@ class RedirectingFunction():
         command_permission = commands_dp[self.command]['perm']
 
         if command_permission == 'host':
+            print(self.dpGames)
             if self.senderID not in self.dpGames or not (self.room in self.dpGames[self.senderID]):
                 dpGame: GameCommands = GameCommands(self.senderID)
                 Varlist.host = self.senderID
@@ -32,6 +33,7 @@ class RedirectingFunction():
                     self.dpGames[self.senderID].update({
                         self.room: dpGame
                     })
+            print(self.dpGames)
 
             inst = self.dpGames[self.senderID][self.room]
             inst.redirect_command(inst, self.command)

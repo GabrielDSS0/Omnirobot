@@ -1,4 +1,4 @@
-showdownpy==0.1.5
+psclient==0.0.8
 websockets==12.0
 psycopg2==2.9.9
 requests==2.31.0
