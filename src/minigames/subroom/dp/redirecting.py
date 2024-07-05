@@ -9,6 +9,7 @@ class RedirectingFunction():
         self.websocket = Varlist.websocket
 
         self.room = Varlist.room
+        self.groupchat_simplified = Varlist.groupchat_name_simplified
         self.senderID = Varlist.senderID
         self.msgType = Varlist.msgType
 
@@ -21,19 +22,17 @@ class RedirectingFunction():
         command_permission = commands_dp[self.command]['perm']
 
         if command_permission == 'host':
-            print(self.dpGames)
-            if self.senderID not in self.dpGames or not (self.room in self.dpGames[self.senderID]):
+            if self.senderID not in self.dpGames or not (self.groupchat_simplified in self.dpGames[self.senderID]):
                 dpGame: GameCommands = GameCommands(self.senderID)
                 Varlist.host = self.senderID
                 if not (self.senderID in self.dpGames):
                     self.dpGames[self.senderID] =  {
-                        self.room: dpGame
+                        self.groupchat_simplified: dpGame
                     }
                 else:
                     self.dpGames[self.senderID].update({
-                        self.room: dpGame
+                        self.groupchat_simplified: dpGame
                     })
-            print(self.dpGames)
 
-            inst = self.dpGames[self.senderID][self.room]
+            inst = self.dpGames[self.senderID][self.groupchat_simplified]
             inst.redirect_command(inst, self.command)

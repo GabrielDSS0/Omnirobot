@@ -25,11 +25,9 @@ class ActsCalculator():
                 target_class = self.players_classes[target]
                 dodge_rate = target_class.dr
                 roll = random.randint(1, 100)
-                self.makeAction(f"Roll 1 de 100: {roll}")
                 if not(roll <= dodge_rate):
                     critical_rate = player_class.cr
                     roll = random.randint(1, 100)
-                    self.makeAction(f"Roll 1 de 100: {roll}")
                     if not (roll <= critical_rate):
                         target_class.hp -= 10
                     else:

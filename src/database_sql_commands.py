@@ -34,7 +34,6 @@ CREATE_TABLE_DP_GAME = """
 CREATE TABLE IF NOT EXISTS tbl_dp_game (
 idGame serial PRIMARY KEY NOT NULL,
 subroom_name varchar(60) NOT NULL,
-host_name varchar(20) NOT NULL,
 host_name_id varchar(20) NOT NULL
 )
 """
@@ -245,9 +244,33 @@ class Commands_SQL():
         """
         self.call_execute_sql_command()
     
+    def insert_dp_game(self, subroom_name: str, host_name_id: str):
+        self.params = (subroom_name, host_name_id)
+        self.command = """INSERT INTO tbl_dp_game (subroom_name, host_name_id) VALUES (%s,%s)
+        """
+        self.call_execute_sql_command()
+    
+    def select_dp_games(self):
+        self.params = ()
+        self.command = """SELECT * FROM tbl_dp_game
+        """
+        return self.call_execute_sql_query()
+    
     def insert_dp_action(self, idGame: int, action: str):
         self.params = (idGame, action)
         self.command = """INSERT INTO tbl_dp_action (idGame, action) VALUES (%s,%s)
+        """
+        self.call_execute_sql_command()
+    
+    def select_dp_actions(self, idGame: int):
+        self.params = ()
+        self.command = f"""SELECT action FROM tbl_dp_action WHERE idGame = {idGame}
+        """
+        return self.call_execute_sql_query()
+    
+    def delete_dp_actions(self, idGame: int):
+        self.params = ()
+        self.command = f"""DELETE FROM tbl_dp_action WHERE idGame = {idGame}
         """
         self.call_execute_sql_command()
 

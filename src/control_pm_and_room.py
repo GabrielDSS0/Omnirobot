@@ -77,6 +77,8 @@ class Control():
                 self.room = "lobby"
             else:
                 self.room = self.room[1:]
+                if self.room[:9] == "groupchat":
+                    Varlist.groupchat_name_simplified = self.room.split("-")[2]
 
         elif self.msgType == "pm":
             self.room = self.commandParams[0].strip()

@@ -9,6 +9,7 @@ from src.minigames.subroom.dp.playing.acts.endround import PostRound
 
 class GameCommands():
     def __init__(self, host):
+        self.idGame: int
         self.host = host
         self.room = Varlist.room
         self.players = []
@@ -17,8 +18,6 @@ class GameCommands():
         self.playersClasses = {}
         self.team1_classes = {}
         self.team2_classes = {}
-
-        self.writings = Varlist.writing
 
         self.sql_commands = Varlist.sql_commands
         self.dpGames = Varlist.dpGames
@@ -31,6 +30,8 @@ class GameCommands():
         func()
 
     def startdp(self):
+        self.sql_commands.insert_dp_game(self.room, self.host)
+        self.idGame = self.sql_commands.select_dp_games()[-1][0]
         respondRoom("O jogo de Dungeons & Pokémon foi iniciado! Para definir os jogadores, o host do jogo terá que digitar @defplayers [jogadores] aqui no chat, e eu mesmo irei sortear os jogadores por equipe.", self.room)
 
     def defplayers(self):
@@ -65,10 +66,9 @@ class GameCommands():
         targets = ""
         if len(self.commandParams) > 3:
             targets = self.commandParams[3:]
-        print(self.playersClasses)
-        act: ActsCalculator = ActsCalculator(player, act, targets, self.playersClasses)
-        call_command(act.act_calc())
+        act: ActsCalculator = ActsCalculator(self.idGame, player, act, targets, self.playersClasses)
+        act.act_calc()
 
     def actsconfirm(self):
-        postRoundInstance: PostRound = PostRound()
-        self.writings[self.room] = postRoundInstance
+        postRoundInstance: PostRound = PostRound(self.idGame, self.room)
+        asyncio.create_task(postRoundInstance.writingActions())

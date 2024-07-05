@@ -10,10 +10,10 @@ class Varlist:
    commandParams: list = []
    questions: dict = {}
    dpGames: dict = {}
-   writing: dict = {}
    command: str = ""
    sender: str = ""
    senderID: str = ""
    content: str = ""
    msgType: str = ""
    room: str = ""
+   groupchat_name_simplified: str = ""
