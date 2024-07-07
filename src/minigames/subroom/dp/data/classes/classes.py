@@ -5,10 +5,10 @@ class ClassDefault:
     cr: float
     dr: float
     gold: float = -1
-    shield: dict = {}
     positive_effects: dict = {}
     negative_effects: dict = {}
     other_effects: dict = {}
+    cooldowns: dict = {}
 
 class Warrior(ClassDefault):
     name = "Warrior"
