@@ -80,7 +80,7 @@ class ActsCalculator():
             "CRITICAL": critical
         }
 
-        for target in self.targets:
+        for target in targets:
             target_class = self.players_classes[target]
             dodge_rate = target_class.dr
             dodge = self.dodge(dodge_rate)
@@ -122,7 +122,7 @@ class ActsCalculator():
             for target in self.targets:
                 target_class = self.players_classes[target]
                 if "PROTEGIDO" in target_class.positive_effects:
-                    effect_value = target_class.negative_effects["PROTEGIDO"]["VALOR"]
+                    effect_value = target_class.positive_effects["PROTEGIDO"]["VALOR"]
                     effect_value += 60
                     if effect_value > 90:
                             effect_value = 90
@@ -346,5 +346,123 @@ class ActsCalculator():
             for player in self.playerTeam:
                 player_class = self.players_classes[player]
                 player_class.other_effects["TRAPPER3"] = {"VALOR": 20,"ROUNDS": 1}
+        
+        elif self.ability == "archer1":
+            for target in self.targets:
+                times = 0
+                target_class = self.players_classes[target]
+                while times != 3:
+                    self.basic_attack(self.player, self.targets)
+                    times += 1
+        
+        elif self.ability == "archer2":
+            for player in self.playerTeam:
+                player_class = self.players_classes[player]
+                player_class.other_effects["ARCHER2"] = {"ROUNDS": 1}
+            maxHp = max(self.hpEnemies, key=self.hpEnemies.get)
+            targets = [maxHp]
+            self.basic_attack(self.player, targets)
+        
+        elif self.ability == "archer3":
+            stat = self.targets[0]
+            if stat == "atk":
+                self.player_class.atk += 10
+            elif stat == "tc":
+                self.player_class.cr += 10
+            elif stat == "td":
+                self.player_class.dr += 10
+            minHp = min(self.hpEnemies, key=self.hpEnemies.get)
+            targets = [minHp]
+            self.basic_attack(self.player, targets)
+        
+        elif self.ability == "berserker1":
+            self.player_class.hp -= 10
+            aditional_atk = (((self.player_class.hp - self.player_class.__class__.hp) * -1) // 10 % 10) * 2
+            for damage in self.damages:
+                self.damages[damage] += aditional_atk
+            
+            for target in self.targets:
+                target_class = self.players_classes[target]
+                dodge_rate = target_class.dr
+                dodge = self.dodge(dodge_rate)
+                if not dodge:
+                    critical_rate = self.player_class.cr
+                    critical = self.critical(critical_rate)
+                    if critical:
+                        damage = self.damages["CRITICAL"]
+                    else:
+                        damage = self.damages["DAMAGE"]
+                    self.make_default_damage(target, damage)
+        
+        elif self.ability == "berserker2":
+            for player in self.playerTeam:
+                player_class = self.players_classes[player]
+                player_class.positive_effects["ROUBOVIDA"] = {"VALOR": 50, "ROUNDS": 1}
+            self.player_class["BERSERKER2"] = {"ROUNDS": 1}
+        
+        elif self.ability == "berserker3":
+            self.player_class.negative_effects.clear()
+            self.player_class.other_effects["BERSERKER3"] = {"ROUNDS": 3}
+
+        elif self.ability == "bard1":
+            for target in self.targets:
+                target_class = self.players_classes[target]
+                dodge_rate = target_class.dr
+                dodge = self.dodge(dodge_rate)
+                if not dodge:
+                    critical_rate = self.player_class.cr
+                    critical = self.critical(critical_rate)
+                    if critical:
+                        damage = self.damages["CRITICAL"]
+                    else:
+                        damage = self.damages["DAMAGE"]
+                    self.make_default_damage(target, damage)
+                    self.target_class.positive_effects.clear()
+        
+        elif self.ability == "bard2":
+            for player in self.playerTeam:
+                player_class = self.players_classes[player]
+                if "FORTALECIDO" in target_class.positive_effects:
+                    effect_value = target_class.negative_effects["FORTALECIDO"]["VALOR"]
+                    effect_value += 20
+                else:
+                    effect_value = 20
+                target_class.negative_effects["FORTALECIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
+                self.player_class.negative_effects.clear()
+        
+        elif self.ability == "bard3":
+            enemies = len(self.targets)
+            for target in self.targets:
+                target_class = self.players_classes[target]
+                if self.targets[0] == target:
+                    dodge_rate = target_class.dr
+                    dodge = self.dodge(dodge_rate)
+                    if not dodge:
+                        critical_rate = self.player_class.cr
+                        critical = self.critical(critical_rate)
+                        if critical:
+                            damage = self.damages["CRITICAL"]
+                        else:
+                            damage = self.damages["DAMAGE"]
+                        self.make_default_damage(target, damage)
+                        self.target_class.positive_effects.clear()
+
+                if enemies == 2 and self.targets[1] == target:
+                    if "ATORDOADO" in target_class.negative_effects:
+                        pass
+                    else:
+                        target_class.negative_effects["ATORDOADO"] = {}
+
+                if enemies == 3 and self.targets[2] == target:
+                    if "ENFRAQUECIDO" in target_class.negative_effects:
+                        effect_value = target_class.negative_effects["PROTEGIDO"]["VALOR"]
+                        effect_value += 50
+                        if effect_value > 90:
+                                effect_value = 90
+                    else:
+                        effect_value = 50
+                    target_class.negative_effects["PROTEGIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
+
+
  
         self.player_class.cooldowns[self.ability] = self.ability_class.cooldown
