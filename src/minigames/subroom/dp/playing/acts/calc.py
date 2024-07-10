@@ -447,21 +447,95 @@ class ActsCalculator():
                         self.make_default_damage(target, damage)
                         self.target_class.positive_effects.clear()
 
-                if enemies == 2 and self.targets[1] == target:
+                if enemies > 1 and self.targets[1] == target:
                     if "ATORDOADO" in target_class.negative_effects:
                         pass
                     else:
                         target_class.negative_effects["ATORDOADO"] = {}
 
-                if enemies == 3 and self.targets[2] == target:
+                if enemies > 2 and self.targets[2] == target:
                     if "ENFRAQUECIDO" in target_class.negative_effects:
-                        effect_value = target_class.negative_effects["PROTEGIDO"]["VALOR"]
+                        effect_value = target_class.negative_effects["ENFRAQUECIDO"]["VALOR"]
                         effect_value += 50
                         if effect_value > 90:
                                 effect_value = 90
                     else:
                         effect_value = 50
-                    target_class.negative_effects["PROTEGIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
+                    target_class.negative_effects["ENFRAQUECIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
+        
+        elif self.ability == "necromancer0":
+            pass
+
+        elif self.ability == "necromancer1":
+            for target in self.targets:
+                target_class = self.players_classes[target]
+                dodge_rate = target_class.dr
+                dodge = self.dodge(dodge_rate)
+                if not dodge:
+                    critical_rate = self.player_class.cr
+                    critical = self.critical(critical_rate)
+                    if critical:
+                        damage = self.damages["CRITICAL"]
+                    else:
+                        damage = self.damages["DAMAGE"]
+                    self.make_default_damage(target, damage)
+                    if "ENVENENANDO" in target_class.negative_effects:
+                        #aqui colocar uma mensagem falando que o inimigo já estava envenenado
+                        pass
+                    target_class.negative_effects["ENVENENADO"] = {"ROUNDS": 2}
+        
+        elif self.ability == "necromancer2":
+            for target in self.targets:
+                target_class = self.players_classes[target]
+                if "ENFRAQUECIDO" in target_class.negative_effects:
+                    effect_value = target_class.negative_effects["ENFRAQUECIDO"]["VALOR"]
+                    effect_value += 50
+                    if effect_value > 90:
+                            effect_value = 90
+                else:
+                    effect_value = 50
+                target_class.negative_effects["ENFRAQUECIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
+                target_class.positive_effects.clear()
+        
+        elif self.ability == "necromancer3":
+            for target in self.targets:
+                target_class = self.players_classes[target]
+                if "MORTO" in target_class.other_effects:
+                    target_class.other_effects.pop("MORTO")
+                    target_class.hp = target_class.__class__.hp * 0.3
+                    target_class.negative_effects["ENVENENADO"] = {"ROUNDS": -1}
+                else:
+                    target_class.positive_effects["FORTALECIDO"] = {"VALOR": 100, "ROUNDS": 2}
+                    if "ENVENENANDO" in target_class.negative_effects:
+                        #aqui colocar uma mensagem falando que o inimigo já estava envenenado
+                        pass
+                    target_class.negative_effects["ENVENENADO"] = {"ROUNDS": 2}
+        
+        elif self.ability == "gambler1":
+            for target in self.targets:
+                target_class = self.players_classes[target]
+                roll1 = self.roll(10)
+                roll2 = self.roll(10)
+                damages = [roll1, roll2]
+                for damage in damages:
+                    self.damages = {
+                        "DAMAGE": damage,
+                        "CRITICAL": damage * 1.5
+                    }
+                    dodge_rate = target_class.dr
+                    dodge = self.dodge(dodge_rate)
+                    if not dodge:
+                        critical_rate = self.player_class.cr
+                        critical = self.critical(critical_rate)
+                        if critical:
+                            damage = self.damages["CRITICAL"]
+                        else:
+                            damage = self.damages["DAMAGE"]
+                        self.make_default_damage(target, damage)
+        
+        elif self.ability == "gambler2":
+            self.player_class.other_effects["IMUNIDADE"] = {"ROUNDS": 1}
+            self.player_class.gold += 10
 
 
  
