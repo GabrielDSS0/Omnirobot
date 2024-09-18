@@ -59,6 +59,26 @@ REFERENCES tbl_dp_team(idTeam)
 )
 """
 
+CREATE_TABLE_DP_CLASS = """
+CREATE TABLE IF NOT EXISTS tbl_dp_class (
+idClass serial PRIMARY KEY NOT NULL,
+idPlayer serial NOT NULL,
+class_name varchar(20) NOT NULL,
+class_name_id varchar(20) NOT NULL,
+stat_hp real NOT NULL,
+stat_atk real NOT NULL,
+stat_tc real NOT NULL,
+stat_td real NOT NULL,
+positive_effects text,
+negative_effects text,
+other_effects text,
+cooldowns text,
+gold integer,
+CONSTRAINT fk_ID_Player FOREIGN KEY (idPlayer)
+REFERENCES tbl_dp_player (idPlayer)
+)
+"""
+
 CREATE_TABLE_DP_ACTIONS = """
 CREATE TABLE IF NOT EXISTS tbl_dp_action (
 idAction serial PRIMARY KEY NOT NULL,
@@ -103,6 +123,11 @@ class Commands_SQL():
         self.params = ()
         self.command = CREATE_TABLE_DP_PLAYER
         self.call_execute_sql_command()
+    
+    def create_table_dp_class(self):
+        self.params = ()
+        self.command = CREATE_TABLE_DP_CLASS
+        self.call_execute_sql_command()
 
     def create_table_dp_action(self):
         self.params = ()
@@ -117,6 +142,7 @@ class Commands_SQL():
                     self.create_table_dp_game,
                     self.create_table_dp_team,
                     self.create_table_dp_player,
+                    self.create_table_dp_class,
                     self.create_table_dp_action,
         ]
     

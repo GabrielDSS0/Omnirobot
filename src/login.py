@@ -1,6 +1,7 @@
 import json
 import requests
 import logging
+import asyncio
 
 from src.commands_list import commands_dp, commands_mq, commands_leaderboard
 from src.vars import Varlist
@@ -44,6 +45,8 @@ class User():
                     for room in rooms:
                         call_command(self.websocket.send(f"|/join {room}"))
                         Commands_SQL().insert_room(room)
+
+                    call_command(self.websocket.send(f"|/status Digite @help para visualizar os comandos do bot."))
 
                     self.loginDone = True
 

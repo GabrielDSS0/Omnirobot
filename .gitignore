@@ -4,3 +4,5 @@ db.json
 __pycache__
 
 test.py
+
+*.html

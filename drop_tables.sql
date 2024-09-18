@@ -1,0 +1,9 @@
+drop table omni_schema.tbl_leaderboard
+drop table omni_schema.tbl_user
+drop table omni_schema.tbl_room
+drop table omni_schema.tbl_dp_action
+drop table omni_schema.tbl_dp_move
+drop table omni_schema.tbl_dp_class
+drop table omni_schema.tbl_dp_player
+drop table omni_schema.tbl_dp_team
+drop table omni_schema.tbl_dp_game

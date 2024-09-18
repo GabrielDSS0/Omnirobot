@@ -65,7 +65,6 @@ class GameCommands():
             self.html += f'<td style="width: 50.00%"><center><button name="send" value="/w {username},{prefix}respond {self.room}, {self.host}, {alternative}" style=background-color:transparent;border:none;><font color="{color}" size="3"><b>{alternative}</b></font></button></center></tr>'
         self.fontColors.remove(color)
         self.alternatives.append(alternative)
-
         respondPM(self.senderID, f"Alternativa feita! Se quiser colocar alguma alternativa como a correta, digite {prefix}danswer (alternativa).")
 
     def defineanswer(self):
@@ -120,6 +119,8 @@ class GameCommands():
         self.postQuestion()
 
     def postQuestion(self):
+        self.killQuestion()
+
         self.msgType = 'room'
         threads = []
 

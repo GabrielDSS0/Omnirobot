@@ -1,16 +1,18 @@
 import random
 
+from data.dp.classes.classes import classes_dict
+
 from src.vars import Varlist
 from src.sending import *
 from src.leaderboard.commands import *
-from src.minigames.subroom.dp.data.classes.classes import classes_dict
+from src.minigames.subroom.dp.playing.acts.startround import StartRound
 from src.minigames.subroom.dp.playing.acts.calc import ActsCalculator
 from src.minigames.subroom.dp.playing.acts.endround import PostRound
 
 class GameCommands():
     def __init__(self, host):
         self.idGame: int
-        self.round: int
+        self.round: int = 0
         self.host = host
         self.room = Varlist.room
         self.players = []
@@ -21,6 +23,7 @@ class GameCommands():
         self.team1_classes = {}
         self.team2_classes = {}
         self.abilities_order = {}
+        self.startRound = False
 
         self.sql_commands = Varlist.sql_commands
         self.dpGames = Varlist.dpGames
@@ -39,6 +42,7 @@ class GameCommands():
         self.sql_commands.insert_dp_game(self.room, self.host)
         self.idGame = self.sql_commands.select_dp_games()[-1][0]
         respondRoom("O jogo de Dungeons & Pokémon foi iniciado! Para definir os jogadores, o host do jogo terá que digitar @defplayers [jogadores] aqui no chat, e eu mesmo irei sortear os jogadores por equipe.", self.room)
+        respondRoom("Post oficial do fórum de Dungeons & Pokémon, caso tenha dúvidas em relação ao jogo: https://pspt.boards.net/thread/701/projeto-dungeons-pokemon", self.room)
 
     def defplayers(self):
         players = self.commandParams
@@ -57,7 +61,7 @@ class GameCommands():
         team = "Equipe 1" if self.priorityTeam == self.team1 else "Equipe 2"
         respondRoom(f"A equipe que terá prioridade de habilidades no primeiro round será a: {team}", self.room)
         
-        asyncio.create_task(self.asyncio_sleep_func(4))
+        asyncio.create_task(self.asyncio_sleep_func(2))
         respondRoom(f"Equipes definidas! Peço agora ao host para que defina as classes dos respectivos jogadores com o comando @defclass em minha PM.", self.room)
     
     def defclass(self):
@@ -71,16 +75,26 @@ class GameCommands():
             self.team2_classes[player] = player_class
         respondPM(self.senderID, "Classe atribuída!")
 
+        if len(list(self.playersClasses)) == len(self.players):
+            respondPM(self.senderID, "Todas as classes foram atribuídas!")
+    
+    def spirit_case(self):
+        player_spirit = self.commandParams[1].strip()
+        player_possessed = self.commandParams[-1].strip()
+
     def act(self):
         player = self.commandParams[1].strip()
         act = self.commandParams[2].strip()
         targets = ""
         if len(self.commandParams) > 3:
             targets = self.commandParams[3:]
-        act: ActsCalculator = ActsCalculator(self.idGame, player, act, targets, self.playersClasses)
+        act: ActsCalculator = ActsCalculator(self.idGame, player, act, targets, self.playersClasses, self.team1_classes, self.team2_classes)
         self.abilities_order[player] = act
 
     def actsconfirm(self):
+        if self.startRound:
+            start_round: StartRound = StartRound()
+            start_round.actionsRound()
         abilitiesPriority = {}
         for player in self.abilities_order:
             act = self.abilities_order[player]
@@ -91,8 +105,9 @@ class GameCommands():
             abilitiesPriority[act] = abilityPriority
         actsSequence = dict(sorted(abilitiesPriority.items(), key=lambda item: item[1], reverse=True))
         for act in actsSequence:
-            act.ability_calc()
-        postRoundInstance: PostRound = PostRound(self.idGame, self.room)
-        asyncio.create_task(postRoundInstance.writingActions())
+            act.controller()
+        postRoundInstance: PostRound = PostRound(self.idGame, self.room, self.playersClasses, self.team1_classes, self.team2_classes)
+        postRoundInstance.controller()
+        asyncio.create_task(postRoundInstance.writing_actions())
         self.abilities_order.clear()
         self.round += 1
