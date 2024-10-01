@@ -22,6 +22,9 @@ class GameCommands():
         self.playersClasses = {}
         self.team1_classes = {}
         self.team2_classes = {}
+        self.playersDead = {}
+        self.team1_dead = {}
+        self.team2_dead = {}
         self.abilities_order = {}
         self.startRound = False
 
@@ -77,10 +80,6 @@ class GameCommands():
 
         if len(list(self.playersClasses)) == len(self.players):
             respondPM(self.senderID, "Todas as classes foram atribuídas!")
-    
-    def spirit_case(self):
-        player_spirit = self.commandParams[1].strip()
-        player_possessed = self.commandParams[-1].strip()
 
     def act(self):
         player = self.commandParams[1].strip()
@@ -105,9 +104,27 @@ class GameCommands():
             abilitiesPriority[act] = abilityPriority
         actsSequence = dict(sorted(abilitiesPriority.items(), key=lambda item: item[1], reverse=True))
         for act in actsSequence:
-            act.controller()
+            self.playersClasses, self.playersDead, self.team1_dead, self.team2_dead = act.controller()
         postRoundInstance: PostRound = PostRound(self.idGame, self.room, self.playersClasses, self.team1_classes, self.team2_classes)
         postRoundInstance.controller()
         asyncio.create_task(postRoundInstance.writing_actions())
         self.abilities_order.clear()
         self.round += 1
+            
+    def spirit(self):
+        player_spirit = self.commandParams[1].strip()
+        player_possessed = self.commandParams[-1].strip()
+        spirit_class = self.playersClasses[player_spirit]
+        possessed_class = self.playersClasses[player_possessed]
+        spirit_class.other_effects["POSSUINDO"]  = player_possessed
+        shield_value = 10
+        if "ESCUDO" in possessed_class.positive_effects:
+            shield_value += possessed_class.positive_effects["ESCUDO"]
+        possessed_class.positive_effects["ESCUDO"] = {"VALOR": shield_value, "ROUNDS": 2}
+
+
+    def trapper(self):
+        player = self.commandParams[1].strip()
+        target = self.commandParams[2].strip()
+        target_class = self.playersClasses[target]
+        target_class.other_effects["TRAPPER00"] = {"ROUNDS": 1}

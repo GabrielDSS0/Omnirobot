@@ -2,14 +2,18 @@ import random
 
 from src.vars import Varlist
 from data.dp.abilities.abilities import abilities_dict
+from data.dp.abilities.extra_abilities import extrabilities_dict
 
 class ActsCalculator():
-    def __init__(self, idGame, player, ability, targets, players_classes, team1_classes, team2_classes) -> None:
+    def __init__(self, idGame, player, ability, targets, players_classes, team1_classes, team2_classes, players_dead, team1_dead, team2_dead) -> None:
         self.idGame = idGame
         self.player = player
         self.ability = ability
         self.targets = targets
         self.players_classes = players_classes
+        self.players_dead = players_dead
+        self.team1_dead = team1_dead
+        self.team2_dead = team2_dead
         self.damages = {}
         self.damagePerTarget = {}
         self.enemyTeam = {}
@@ -43,9 +47,20 @@ class ActsCalculator():
         self.sql_commands.insert_dp_action(self.idGame, action)
     
     def controller(self):
+        self.startRound()
         self.targets = self.update_targets(self.player, self.targets)
         self.damages, self.damagePerTarget = self.update_damages_and_status(self.player, self.ability, self.targets)
         self.ability_calc()
+        return self.players_classes, self.players_dead, self.team1_dead, self.team2_dead
+    
+    def check_conditions(self):
+        if "ATORDOADO" in self.player_class.negative_effects:
+            self.player_class.negative_effects.pop("ATORDOADO")
+            return
+        if "TRAPPER2" in self.player_class.other_effects:
+            ability = self.player_class.other_effects["TRAPPER2"]["ABILITY"]
+            if ability == self.ability:
+                return
 
     def update_targets(self, player, targets):
         player_class = self.players_classes[player]
@@ -60,9 +75,10 @@ class ActsCalculator():
 
         return targets
 
-    def update_damages_and_status(self, player, ability, targets):
+    def update_damages_and_status(self, player, ability, targets, damages = {}):
         player_class = self.players_classes[player]
-        damages = abilities_dict[ability].damages.copy()
+        if not damages:
+            damages = abilities_dict[ability].damages.copy() if ability in abilities_dict else extrabilities_dict[ability].damages.copy()
         damagesPerTarget = {}
         enemyTeam = self.enemyTeam if player in self.enemyTeam else self.playerTeam
     
@@ -106,47 +122,90 @@ class ActsCalculator():
         return roll
 
     def dodge(self, target, player):
-        target_class = self.players_classes[target]
         player_class = self.players_classes[player]
+        if player_class.name == "Archer":
+            return
+        target_class = self.players_classes[target]
         dr = target_class.dr
         roll = self.roll(100)
-        if not (roll <= dr) and target_class.name == "Ninja":
-            player_class.hp -= 7
-            return
+        if roll <= dr and target_class.name == "Ninja":
+            damage = 7
+            self.make_default_damage(player, damage, target)
+            return True
         elif not (roll <= dr):
+            if target_class.name == "Gambler":
+                target_class.gold += 5
             return
         return True
 
-    def critical(self, cr):
+    def critical(self, cr, player):
+        player_class = self.players_classes[player]
         roll = self.roll(100)
         if not (roll <= cr):
             return
+        if player_class.name == "Gambler":
+            player_class.gold += 5
         return True
     
-    def make_fixed_damage(self, target, damage):
-        target_class = self.players_classes[target]
-        target_class.hp -= damage
+    def check_trapper3(self, team):
+        trap_hp = 0
+        for player in team:
+            player_class = self.players_classes[player]
+            trap_hp += player_class.other_effects["TRAPPER3"]["VALOR"]
+        difference = (20 * len(team)) - trap_hp
+        return difference
+    
+    def bard_passive(self, team, player_target):
+        for player in team:
+            player_class = team[player]
+            if player_class == "Bard":
+                player_target_class = team[player_target]
+                shield = "ESCUDO" in player_target_class.positive_effects
+                if shield:
+                    shield_value = player_target_class.positive_effects["ESCUDO"]["VALOR"]
+                    shield_value += 3
+                else:
+                    shield_value = 3
+                
+                player_target_class.positive_effects["ESCUDO"] = {"VALOR": shield_value, "ROUNDS": 2}
 
     def make_default_damage(self, target, damage, player="", critical=False):
         if not player:
             player = self.player
         player_class = self.players_classes[player]
+
+        if player in self.team1_classes:
+            playerTeam = self.team1_classes
+            enemyTeam = self.team2_classes
+        else:
+            playerTeam = self.team2_classes
+            enemyTeam = self.team1_classes
+
         shield_value = 0
+        trapper3_value = 0
+
         shield = False
-        
+
         target_class = self.players_classes[target]
         target_hp = target_class.hp
+
+        if "TRAPPER3" in target_class.other_effects:
+            trapper3_value = self.check_trapper3(enemyTeam)
+
+
         if "ESCUDO" in target_class.positive_effects:
             shield_value = target_class.positive_effects["ESCUDO"]["VALOR"]
             shield = True
 
-        if shield_value > 0 and not critical:
-            shield_value -= damage
-            if shield_value < 0:
-                target_hp += shield_value
-                shield_value = 0
-        else:
-            target_hp -= damage
+        trapper3_value -= damage
+        if trapper3_value < 0:            
+            if shield_value > 0 and not critical:
+                shield_value -= damage
+                if shield_value < 0:
+                    target_hp += shield_value
+                    shield_value = 0
+            else:
+                target_hp -= damage
 
         if shield:
             if shield_value == 0:
@@ -155,6 +214,14 @@ class ActsCalculator():
                 target_class.positive_effects["ESCUDO"]["VALOR"] = shield_value
 
         target_class.hp = target_hp
+
+        if "ROUBOVIDA" in player_class.positive_effects:
+            lifesteal = player_class.positive_effects["ROUBOVIDA"]["VALOR"]
+            self.bard_passive(self.playerTeam, player)
+            hp_stolen = damage * (lifesteal /100)
+            player_class.hp += hp_stolen
+            if player_class.hp > player_class.__class__.hp:
+                player_class.hp = player_class.__class__.hp
 
         if player_class.name == "Warrior":
             target_class.negative_effects["PROVOCADO"] = {"JOGADOR": player}
@@ -183,6 +250,71 @@ class ActsCalculator():
             targets = self.update_targets(target, [player])
             damages, damagePerAlvo = self.update_damages_and_status(target, ability_name, [player])
             self.extra_ability_calc(target, ability_name, [player], damages)
+            target_class.other_effects.pop("ESCUDO_DE_FOGO")
+        
+        if "TRAPPER00" in target_class.other_effects:
+            damage = 7
+            self.make_default_damage(player, damage, target)
+
+    def startRound(self):
+        for player in self.players_classes:
+            player_class = self.players_classes[player]
+            if player in self.team1_classes:
+                playerTeam = self.team1_classes
+                enemyTeam = self.team2_classes
+            else:
+                playerTeam = self.team2_classes
+                enemyTeam = self.team1_classes
+
+            hpAllies = {}
+            for player in playerTeam:
+                player_class = self.players_classes[player]
+                hpAllies[player] = player_class.hp
+
+            if player_class.name == "Cleric":
+                roll = self.roll(100)
+                if roll <= 30:
+                    minHp = min(hpAllies, key=hpAllies.get)
+                    targets = [minHp]
+                    for target in targets:
+                        target_class = self.players_classes[target]
+                    
+                        target_class.hp += 7
+                        if target_class.hp > target_class.__class__.hp:
+                            target_class.hp = target_class.__class__.hp
+            
+            if "TRAPPER1" in player_class.other_effects:
+                ability_name = "trapper1_on"
+                enemy = random.choice(list(enemyTeam))
+                damages, damagePerAlvo = self.update_damages_and_status(player, ability_name, [enemy])
+                self.extra_ability_calc(player, ability_name, [enemy], damages)
+            
+            if "TRAPPER3" in player_class.other_effects:
+                trap_hp = 0
+                for player_class in enemyTeam:
+                    trap_hp += player_class.other_effects["TRAPPER3"]["VALOR"]
+                difference = (20 * len(playerTeam)) - trap_hp
+                if difference > 20:
+                    ability_name = "trapper3_on"
+                    minHp = min(self.hpEnemies, key=self.hpEnemies.get)
+                    targets = [minHp]
+                    damages = {"DAMAGE": difference,
+                               "CRITICAL": difference * 1.5}
+                    damages, damagePerAlvo = self.update_damages_and_status(player, ability_name, [enemy], damages)
+                    self.extra_ability_calc(player, ability_name, [enemy], damages)
+                for player in playerTeam:
+                    player_class = playerTeam[player]
+                    player_class.other_effects.pop("TRAPPER3")
+            
+
+            if "BERSERKER3" in player_class.other_effects:
+                self.player_class.hp += 15
+                if player_class.hp > player_class.__class__.hp:
+                    player_class.hp = player_class.__class__.hp
+                rounds = self.players_classes.other_effects["ROUNDS"]
+                self.players_classes.other_effects["ROUNDS"] = (rounds - 1)
+                if rounds == 0:
+                    self.players_classes.other_effects.pop("BERSERKER3")
 
     def basic_attack(self, player, targets):
         damage = self.players_classes[player].atk / 10
@@ -194,7 +326,6 @@ class ActsCalculator():
 
         for target in targets:
             target_class = self.players_classes[target]
-            dodge_rate = target_class.dr
             dodge = self.dodge(target)
             if not dodge:
                 critical_rate = self.player_class.cr
@@ -228,8 +359,6 @@ class ActsCalculator():
                     else:
                         effect_value = 20
                     target_class.negative_effects["ENFRAQUECIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
-                print(target_class.hp)
-                self.makeAction("TESTE1")
         
         elif self.ability == "warrior2":
             for target in self.targets:
@@ -241,7 +370,11 @@ class ActsCalculator():
                             effect_value = 90
                     else:
                         effect_value = 60
-                    target_class.negative_effects["PROTEGIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
+                else:
+                    effect_value = 60
+                target_class.positive_effects["PROTEGIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
+                self.bard_passive(self.playerTeam, target)
+                
 
         elif self.ability == "warrior3":
             maxHp = max(self.hpEnemies, key=self.hpEnemies.get)
@@ -421,23 +554,26 @@ class ActsCalculator():
                 else:
                     effect_value = 20
                 player_class.negative_effects["PROTEGIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
+                self.bard_passive(self.playerTeam, player)
         
         elif self.ability == "paladin3":
             for target in self.targets:
                 if "PROTEGIDO" in target_class.positive_effects:
-                    effect_value = target_class.negative_effects["PROTEGIDO"]["VALOR"]
+                    effect_value = target_class.positive_effects["PROTEGIDO"]["VALOR"]
                     effect_value += 50
                     if effect_value > 90:
                             effect_value = 90
                 else:
                     effect_value = 50
-                target_class.negative_effects["PROTEGIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
+                target_class.positive_effects["PROTEGIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
+                self.bard_passive(self.playerTeam, target)
                 if "FORTALECIDO" in target_class.positive_effects:
-                    effect_value = target_class.negative_effects["FORTALECIDO"]["VALOR"]
+                    effect_value = target_class.positive_effects["FORTALECIDO"]["VALOR"]
                     effect_value += 50
                 else:
                     effect_value = 50
-                target_class.negative_effects["FORTALECIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
+                target_class.positive_effects["FORTALECIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
+                self.bard_passive(self.playerTeam, target)
         
         elif self.ability == "trapper1":
             if "ESCUDO" in self.player_class.positive_effects:
@@ -458,7 +594,7 @@ class ActsCalculator():
         elif self.ability == "trapper3":
             for player in self.playerTeam:
                 player_class = self.players_classes[player]
-                player_class.other_effects["TRAPPER3"] = {"VALOR": 20,"ROUNDS": 1}
+                player_class.other_effects["TRAPPER3"] = {"VALOR": 20, "JOGADOR": self.player}
         
         elif self.ability == "archer1":
             for target in self.targets:
@@ -467,10 +603,11 @@ class ActsCalculator():
                 while times != 3:
                     self.basic_attack(self.player, self.targets)
                     times += 1
-        
+
         elif self.ability == "archer2":
             for player in self.playerTeam:
                 player_class = self.players_classes[player]
+                player_class.cr += 10
                 player_class.other_effects["ARCHER2"] = {"ROUNDS": 1}
             maxHp = max(self.hpEnemies, key=self.hpEnemies.get)
             targets = [maxHp]
@@ -493,7 +630,7 @@ class ActsCalculator():
             aditional_atk = (((self.player_class.hp - self.player_class.__class__.hp) * -1) // 10 % 10) * 2
             for damage in self.damages:
                 self.damages[damage] += aditional_atk
-            
+
             for target in self.targets:
                 target_class = self.players_classes[target]
                 dodge_rate = target_class.dr
@@ -543,6 +680,7 @@ class ActsCalculator():
                 else:
                     effect_value = 20
                 target_class.negative_effects["FORTALECIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
+                self.bard_passive(self.playerTeam, player)
                 self.player_class.negative_effects.clear()
         
         elif self.ability == "bard3":
@@ -577,9 +715,6 @@ class ActsCalculator():
                     else:
                         effect_value = 50
                     target_class.negative_effects["ENFRAQUECIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
-        
-        elif self.ability == "necromancer0":
-            pass
 
         elif self.ability == "necromancer1":
             for target in self.targets:
@@ -615,13 +750,15 @@ class ActsCalculator():
         elif self.ability == "necromancer3":
             for target in self.targets:
                 target_class = self.players_classes[target]
-                if "MORTO" in target_class.other_effects:
+                dead_in_same_team = True if (target in self.team1_dead and self.player in self.team1_dead) or (target in self.team2_dead and self.team2_dead) else False
+                if dead_in_same_team and target in self.players_dead:
                     target_class.other_effects.pop("MORTO")
                     target_class.hp = target_class.__class__.hp * 0.3
                     target_class.negative_effects["ENVENENADO"] = {"ROUNDS": -1}
-                else:
+                elif target in self.players_classes:
                     target_class.positive_effects["FORTALECIDO"] = {"VALOR": 100, "ROUNDS": 2}
-                    if "ENVENENANDO" in target_class.negative_effects:
+                    self.bard_passive(self.playerTeam, player)
+                    if "ENVENENADO" in target_class.negative_effects:
                         #aqui colocar uma mensagem falando que o inimigo já estava envenenado
                         pass
                     target_class.negative_effects["ENVENENADO"] = {"ROUNDS": 2}
@@ -664,13 +801,19 @@ class ActsCalculator():
                     target_class.hp /= 2
         
         elif self.ability == "spirit1":
-            pass
+            maxHp = max(self.hpEnemies, key=self.hpEnemies.get)
+            player = self.player_class.other_effects["POSSUINDO"]
+            player_class = self.players_classes[player]
+            act = player_class.default_abilities[0]
+            targets = [maxHp]
+            act: ActsCalculator = ActsCalculator(self.idGame, player, act, targets, self.playersClasses, self.team1_classes, self.team2_classes, self.players_dead, self.team1_dead, self.team2_dead)
+            self.playersClasses, self.playersDead, self.team1_dead, self.team2_dead = act.controller()
 
         elif self.ability == "spirit2":
-            possessed = self.player_class.other_effects["POSSESSING"]
+            possessed = self.player_class.other_effects["POSSUINDO"]
             possessed_class = self.players_classes[possessed]
             possessed_class.hp += 10
-            self.player_class.other_effects["POSSESSING"] = self.targets[0]
+            self.player_class.other_effects["POSSUINDO"] = self.targets[0]
             target_class = self.players_classes[self.targets[0]]
             if "ESCUDO" in self.player_class.positive_effects:
                 shield = self.player_class.positive_effects["ESCUDO"]["VALOR"]
@@ -681,7 +824,7 @@ class ActsCalculator():
         
         elif self.ability == "spirit3":
             self.player_class.other_effects["MORTO"] = {}
-            possessed = self.player_class.other_effects["POSSESSING"]
+            possessed = self.player_class.other_effects["POSSUINDO"]
             possessed_class = self.players_classes[possessed]
             possessed_class.hp = possessed_class.__class__.hp
             possessed_class.negative_effects.clear()
@@ -717,6 +860,34 @@ class ActsCalculator():
                         else:
                             effect_value = 20
                         target_class.negative_effects["ENFRAQUECIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
-                    self.makeAction("TESTE1")
+            
+            if ability == "trapper1_on":
+                target_class = self.players_classes[target]
+                dodge = self.dodge(target, player)
+                if not dodge:
+                    if "ESCUDO" in player_class.positive_effects:
+                        shield_value = player_class.positive_effects["ESCUDO"]["VALOR"]
+                        for damage in damages:
+                            damage = damages[damage]
+                            damages[damage] = (damage + shield_value)
+                    critical_rate = player_class.cr
+                    critical = self.critical(critical_rate)
+                    if critical:
+                        damage = damages["CRITICAL"]
+                    else:
+                        damage = damages["DAMAGE"]
+                    self.make_default_damage(target, damage)
+
+            if ability == "trapper3_on":
+                target_class = self.players_classes[target]
+                dodge = self.dodge(target, player)
+                if not dodge:
+                    critical_rate = player_class.cr
+                    critical = self.critical(critical_rate)
+                    if critical:
+                        damage = damages["CRITICAL"]
+                    else:
+                        damage = damages["DAMAGE"]
+                    self.make_default_damage(target, damage)
 
             player_class.cooldowns[ability] = ability_class.cooldown

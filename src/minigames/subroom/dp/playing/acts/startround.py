@@ -36,6 +36,10 @@ class StartRound():
                     target_class.hp += 7
                     if target_class.hp > target_class.__class__.hp:
                         target_class.hp = target_class.__class__.hp
+            
+            if "TRAPPER1" in player_class.other_effects:
+                shield = player_class.positive_effects["ESCUDO"]["VALOR"]
+                
 
             if "BERSERKER3" in player_class.other_effects:
                 self.player_class.hp += 15

@@ -124,10 +124,10 @@ class GameCommands():
         self.msgType = 'room'
         threads = []
 
-        pre_answer_revelation = 5
-        answer_revelation = pre_answer_revelation + 5
-        score = answer_revelation + 10
-        lb_revelation = score + 10
+        pre_answer_revelation = 3
+        answer_revelation = pre_answer_revelation + 2.5
+        score = answer_revelation + 5
+        lb_revelation = score + 5
         threads.append(threading.Timer(pre_answer_revelation, respondRoom, args=["E a resposta era...", self.room]))
         threads.append(threading.Timer(answer_revelation, respondRoom, args=[f"/wall {self.answer}!", self.room]))
         threads.append(threading.Timer(score, respondRoom, args=[f"Pontuadores: {', '.join(self.usersPointers)}", self.room]))

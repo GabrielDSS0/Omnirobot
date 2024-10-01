@@ -8,6 +8,7 @@ class ClassDefault:
     positive_effects: dict = {}
     negative_effects: dict = {}
     other_effects: dict = {}
+    default_abilities = {}
     cooldowns: dict = {}
 
 class Warrior(ClassDefault):
@@ -16,6 +17,7 @@ class Warrior(ClassDefault):
     atk = 70
     cr = 20
     dr = 20
+    default_abilities = ["warrior1", "warrior2", "warrior3"]
 
 class Mage(ClassDefault):
     name = "Mage"
@@ -23,6 +25,7 @@ class Mage(ClassDefault):
     atk = 60
     cr = 30
     dr = 30
+    default_abilities = ["mage1", "mage2", "mage3"]
 
 class Cleric(ClassDefault):
     name = "Cleric"
@@ -30,6 +33,7 @@ class Cleric(ClassDefault):
     atk = 50
     cr = 30
     dr = 40
+    default_abilities = ["cleric1", "cleric2", "cleric3"]
 
 class Ninja(ClassDefault):
     name = "Ninja"
@@ -37,6 +41,7 @@ class Ninja(ClassDefault):
     atk = 50
     cr = 30
     dr = 70
+    default_abilities = ["ninja1", "ninja2", "ninja3"]
 
 class Paladin(ClassDefault):
     name = "Paladin"
@@ -44,6 +49,7 @@ class Paladin(ClassDefault):
     atk = 60
     cr = 30
     dr = 20
+    default_abilities = ["paladin1", "paladin2", "paladin3"]
 
 class Trapper(ClassDefault):
     name = "Trapper"
@@ -51,6 +57,7 @@ class Trapper(ClassDefault):
     atk = 80
     cr = 10
     dr = 20
+    default_abilities = ["trapper1", "trapper2", "trapper3"]
 
 class Archer(ClassDefault):
     name = "Archer"
@@ -58,6 +65,7 @@ class Archer(ClassDefault):
     atk = 50
     cr = 40
     dr = 40
+    default_abilities = ["archer1", "archer2", "archer3"]
 
 class Berserker(ClassDefault):
     name = "Berserker"
@@ -65,6 +73,7 @@ class Berserker(ClassDefault):
     atk = 60
     cr = 20
     dr = 10
+    default_abilities = ["berserker1", "berserker2", "berserker3"]
 
 class Bard(ClassDefault):
     name = "Bard"
@@ -72,6 +81,7 @@ class Bard(ClassDefault):
     atk = 40
     cr = 40
     dr = 40
+    default_abilities = ["bard1", "bard2", "bard3"]
 
 class Necromancer(ClassDefault):
     name = "Necromancer"
@@ -79,6 +89,7 @@ class Necromancer(ClassDefault):
     atk = 70
     cr = 20
     dr = 30
+    default_abilities = ["necromancer1", "necromancer2", "necromancer3"]
 
 class Gambler(ClassDefault):
     name = "Gambler"
@@ -87,6 +98,7 @@ class Gambler(ClassDefault):
     cr = 40
     dr = 40
     gold = 0
+    default_abilities = ["gambler1", "gambler2", "gambler3"]
 
 class Spirit(ClassDefault):
     name = "Spirit"
@@ -94,6 +106,7 @@ class Spirit(ClassDefault):
     atk = 70
     cr = 30
     dr = 50
+    default_abilities = ["spirit1", "spirit2", "spirit3"]
 
 classes_dict = {
     "warrior": Warrior,
