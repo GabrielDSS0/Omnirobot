@@ -5,7 +5,6 @@ from data.dp.classes.classes import classes_dict
 from src.vars import Varlist
 from src.sending import *
 from src.leaderboard.commands import *
-from src.minigames.subroom.dp.playing.acts.startround import StartRound
 from src.minigames.subroom.dp.playing.acts.calc import ActsCalculator
 from src.minigames.subroom.dp.playing.acts.endround import PostRound
 
@@ -87,13 +86,10 @@ class GameCommands():
         targets = ""
         if len(self.commandParams) > 3:
             targets = self.commandParams[3:]
-        act: ActsCalculator = ActsCalculator(self.idGame, player, act, targets, self.playersClasses, self.team1_classes, self.team2_classes)
+        act: ActsCalculator = ActsCalculator(self.idGame, player, act, targets, self.playersClasses, self.team1_classes, self.team2_classes, self.playersDead, self.team1_dead, self.team2_dead)
         self.abilities_order[player] = act
 
     def actsconfirm(self):
-        if self.startRound:
-            start_round: StartRound = StartRound()
-            start_round.actionsRound()
         abilitiesPriority = {}
         for player in self.abilities_order:
             act = self.abilities_order[player]
@@ -104,12 +100,16 @@ class GameCommands():
             abilitiesPriority[act] = abilityPriority
         actsSequence = dict(sorted(abilitiesPriority.items(), key=lambda item: item[1], reverse=True))
         for act in actsSequence:
+            if not (self.startRound):
+                self.startRound = True
+                act.startRound()
             self.playersClasses, self.playersDead, self.team1_dead, self.team2_dead = act.controller()
         postRoundInstance: PostRound = PostRound(self.idGame, self.room, self.playersClasses, self.team1_classes, self.team2_classes)
         postRoundInstance.controller()
         asyncio.create_task(postRoundInstance.writing_actions())
         self.abilities_order.clear()
         self.round += 1
+        self.startRound = False
             
     def spirit(self):
         player_spirit = self.commandParams[1].strip()

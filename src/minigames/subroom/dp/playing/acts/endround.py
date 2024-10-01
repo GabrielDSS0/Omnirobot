@@ -34,34 +34,13 @@ class PostRound():
                 playerTeam = self.team2_classes
                 enemyTeam = self.team1_classes
             
-            if "ENVENENADO" in player_class.negative_effects:
-                roll = self.rollPlusMinus(5, 4)
-                player_class.hp -= roll
-
-            if "TRAPPER00" in player_class.other_effects:
-                rounds = player_class.other_effects["TRAPPER00"]["ROUNDS"]
+            if "IMUNIDADE" in player_class.other_effects:
+                rounds = player_class.other_effects["IMUNIDADE"]["ROUNDS"]
                 rounds -= 1
                 if rounds == 0:
-                    player_class.other_effects.pop("TRAPPER00")
+                    player_class.other_effects.pop("IMUNIDADE")
                 else:
-                    player_class.other_effects["TRAPPER00"]["ROUNDS"] = rounds
-            
-            if "TRAPPER2" in player_class.other_effects:
-                rounds = player_class.other_effects["TRAPPER2"]["ROUNDS"]
-                rounds -= 1
-                if rounds == 0:
-                    player_class.other_effects.pop("TRAPPER2")
-                else:
-                    player_class.other_effects["TRAPPER2"]["ROUNDS"] = rounds
-            
-            if "ARCHER2" in player_class.other_effects:
-                rounds = player_class.other_effects["ARCHER2"]["ROUNDS"]
-                rounds -= 1
-                if rounds == 0:
-                    player_class.other_effects.pop("ARCHER2")
-                    player_class.cr -= 10
-                else:
-                    player_class.other_effects["ARCHER2"]["ROUNDS"] = rounds
+                    player_class.other_effects["IMUNIDADE"]["ROUNDS"] = rounds
             
             if "PROTEGIDO" in player_class.positive_effects:
                 rounds = player_class.positive_effects["PROTEGIDO"]["ROUNDS"]
@@ -94,10 +73,32 @@ class PostRound():
                     player_class.negative_effects.pop("ENFRAQUECIDO")
                 else:
                     player_class.negative_effects["ENFRAQUECIDO"]["ROUNDS"] = rounds
+
+            if "TRAPPER00" in player_class.other_effects:
+                rounds = player_class.other_effects["TRAPPER00"]["ROUNDS"]
+                rounds -= 1
+                if rounds == 0:
+                    player_class.other_effects.pop("TRAPPER00")
+                else:
+                    player_class.other_effects["TRAPPER00"]["ROUNDS"] = rounds
             
-            if "QUEIMADO" in player_class.negative_effects:
-                player_class.hp -= 7
+            if "TRAPPER2" in player_class.other_effects:
+                rounds = player_class.other_effects["TRAPPER2"]["ROUNDS"]
+                rounds -= 1
+                if rounds == 0:
+                    player_class.other_effects.pop("TRAPPER2")
+                else:
+                    player_class.other_effects["TRAPPER2"]["ROUNDS"] = rounds
             
+            if "ARCHER2" in player_class.other_effects:
+                rounds = player_class.other_effects["ARCHER2"]["ROUNDS"]
+                rounds -= 1
+                if rounds == 0:
+                    player_class.other_effects.pop("ARCHER2")
+                    player_class.cr -= 10
+                else:
+                    player_class.other_effects["ARCHER2"]["ROUNDS"] = rounds
+
             if "NINJA2" in player_class.other_effects:
                 rounds = player_class.other_effects["NINJA2"]["ROUNDS"]
                 rounds -= 1
@@ -117,6 +118,13 @@ class PostRound():
                     player_class.dr -= 10
                 else:
                     player_class.other_effects["NINJA3"]["ROUNDS"] = rounds
+            
+            if "ENVENENADO" in player_class.negative_effects:
+                roll = self.rollPlusMinus(5, 4)
+                player_class.hp -= roll
+                        
+            if "QUEIMADO" in player_class.negative_effects:
+                player_class.hp -= 7
 
     async def writing_actions(self):
         actions = self.sql_commands.select_dp_actions(self.idGame)

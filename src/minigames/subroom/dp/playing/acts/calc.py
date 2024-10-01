@@ -10,6 +10,8 @@ class ActsCalculator():
         self.player = player
         self.ability = ability
         self.targets = targets
+        self.team1_classes = team1_classes
+        self.team2_classes = team2_classes
         self.players_classes = players_classes
         self.players_dead = players_dead
         self.team1_dead = team1_dead
@@ -47,7 +49,6 @@ class ActsCalculator():
         self.sql_commands.insert_dp_action(self.idGame, action)
     
     def controller(self):
-        self.startRound()
         self.targets = self.update_targets(self.player, self.targets)
         self.damages, self.damagePerTarget = self.update_damages_and_status(self.player, self.ability, self.targets)
         self.ability_calc()
@@ -107,13 +108,6 @@ class ActsCalculator():
                     damage_value += (damage_value * (value / 100))
                 damages[damage] = damage_value
                 damagesPerTarget[target] = damages
-        
-        if player_class.name == "Archer":
-            for target in self.targets:
-                target_class = self.players_classes[target]
-                self.originalDodgeRate[target] = target_class.dr
-                target_class.dr = 0
-                target_class.other_effects["ARCHER00"] = {}
 
         return damages, damagesPerTarget
 
@@ -146,6 +140,33 @@ class ActsCalculator():
         if player_class.name == "Gambler":
             player_class.gold += 5
         return True
+    
+    def check_death(self, player):
+        player_class = self.players_classes[player]
+        if player_class.hp <= 0:
+            player_class.hp = 0
+            if player not in self.players_dead:
+                self.players_classes.pop(player)
+                if player in self.team1_classes: 
+                    self.team1_classes.pop(player)
+                    self.team1_dead[player] = player_class
+                else: 
+                    self.team2_classes.pop(player)
+                    self.team2_dead[player] = player_class
+                player_class.positive_effects.clear()
+                player_class.negative_effects.clear()
+                player_class.other_effects.clear()
+                player_class.gold = 0
+                player_class.cooldowns.clear()
+            return True
+        else:
+            return
+    
+    def check_immunity(self, player):
+        player_class = self.players_classes[player]
+        if "IMUNIDADE" in player_class.other_effects:
+            return True
+        return
     
     def check_trapper3(self, team):
         trap_hp = 0
@@ -191,7 +212,6 @@ class ActsCalculator():
 
         if "TRAPPER3" in target_class.other_effects:
             trapper3_value = self.check_trapper3(enemyTeam)
-
 
         if "ESCUDO" in target_class.positive_effects:
             shield_value = target_class.positive_effects["ESCUDO"]["VALOR"]
@@ -345,12 +365,12 @@ class ActsCalculator():
                 dodge = self.dodge(target, self.player)
                 if not dodge:
                     critical_rate = self.player_class.cr
-                    critical = self.critical(critical_rate)
+                    critical = self.critical(critical_rate, self.player)
                     if critical:
                         damage = self.damages["CRITICAL"]
                     else:
                         damage = self.damages["DAMAGE"]
-                    self.make_default_damage(target, damage)
+                    self.make_default_damage(target, damage, player)
                     if "ENFRAQUECIDO" in target_class.negative_effects:
                         effect_value = target_class.negative_effects["ENFRAQUECIDO"]["VALOR"]
                         effect_value += 20
