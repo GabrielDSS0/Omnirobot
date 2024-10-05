@@ -27,6 +27,8 @@ class GameCommands():
         self.abilities_order = {}
         self.startRound = False
 
+        self.end_game = False
+
         self.sql_commands = Varlist.sql_commands
         self.dpGames = Varlist.dpGames
 
@@ -82,11 +84,15 @@ class GameCommands():
 
     def act(self):
         player = self.commandParams[1].strip()
-        act = self.commandParams[2].strip()
+        act_name = self.commandParams[2].strip()
         targets = ""
         if len(self.commandParams) > 3:
             targets = self.commandParams[3:]
-        act: ActsCalculator = ActsCalculator(self.idGame, player, act, targets, self.playersClasses, self.team1_classes, self.team2_classes, self.playersDead, self.team1_dead, self.team2_dead)
+        act: ActsCalculator = ActsCalculator(self.idGame, player, act_name, targets, self.playersClasses, self.team1_classes, self.team2_classes, self.playersDead, self.team1_dead, self.team2_dead)
+        if targets:
+            respondPM(self.senderID, f"{player} utilizará a habilidade {act_name}. Alvos: {', '.join(targets)}")
+        else:
+            respondPM(self.senderID, f"{player} utilizará a habilidade {act_name}.")
         self.abilities_order[player] = act
 
     def actsconfirm(self):
@@ -103,14 +109,15 @@ class GameCommands():
             if not (self.startRound):
                 self.startRound = True
                 act.startRound()
-            self.playersClasses, self.playersDead, self.team1_dead, self.team2_dead = act.controller()
-        postRoundInstance: PostRound = PostRound(self.idGame, self.room, self.playersClasses, self.team1_classes, self.team2_classes)
-        postRoundInstance.controller()
+            self.playersClasses, self.team1_classes, self.team2_classes, self.playersDead, self.team1_dead, self.team2_dead, self.end_game = act.controller()
+        postRoundInstance: PostRound = PostRound(self.idGame, self.room, self.playersClasses, self.team1_classes, self.team2_classes, self.team1_dead, self.team2_dead)
+        if not (self.end_game):
+            postRoundInstance.controller()
+            self.round += 1
         asyncio.create_task(postRoundInstance.writing_actions())
         self.abilities_order.clear()
-        self.round += 1
         self.startRound = False
-            
+
     def spirit(self):
         player_spirit = self.commandParams[1].strip()
         player_possessed = self.commandParams[-1].strip()
@@ -121,7 +128,6 @@ class GameCommands():
         if "ESCUDO" in possessed_class.positive_effects:
             shield_value += possessed_class.positive_effects["ESCUDO"]
         possessed_class.positive_effects["ESCUDO"] = {"VALOR": shield_value, "ROUNDS": 2}
-
 
     def trapper(self):
         player = self.commandParams[1].strip()
