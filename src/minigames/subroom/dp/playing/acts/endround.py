@@ -16,14 +16,19 @@ class PostRound():
         self.team1_dead = team1_dead
         self.team2_dead = team2_dead
 
+        self.end_game = False
+    
+    def makeAction(self, action):
+        self.sql_commands.insert_dp_action(self.idGame, action)
+
     def controller(self):
         self.round_final_moves()
-        self.startRound = True
-        return self.startRound
+        return self.end_game
 
-    def rollPlusMinus(self, maxRoll, add):
+    def rollPlus(self, maxRoll, add):
         roll = random.randint(1, maxRoll)
         roll += add
+        self.makeAction(f"Roll 1 de {maxRoll} + {add}: {roll}")
         return roll
     
     def check_death(self, player):
@@ -49,6 +54,7 @@ class PostRound():
     
     def check_end(self):
         if not (self.team1_classes) or not (self.team2_classes):
+            self.end_game = True
             return True
         return
 
@@ -148,10 +154,14 @@ class PostRound():
                     player_class.other_effects["NINJA3"]["ROUNDS"] = rounds
             
             if "ENVENENADO" in player_class.negative_effects:
-                roll = self.rollPlusMinus(5, 4)
+                self.makeAction(f"{player} está envenenado, pode tomar de 5 a 9 de dano")
+                roll = self.rollPlus(5, 4)
                 player_class.hp -= roll
+                self.makeAction(f"{player} tomou {roll} de dano")
                 if self.check_death(player):
                     continue
+                if self.check_end():
+                    break
                 rounds = player_class.other_effects["ENVENENADO"]["ROUNDS"]
                 rounds -= 1
                 if rounds == 0:
@@ -160,6 +170,7 @@ class PostRound():
                     player_class.other_effects["ENVENENADO"]["ROUNDS"] = rounds
 
             if "QUEIMADO" in player_class.negative_effects:
+                self.makeAction(f"{player} tomou 7 de dano por conta da queimadura")
                 player_class.hp -= 7
                 if self.check_death(player):
                     continue
@@ -170,10 +181,13 @@ class PostRound():
         actions = self.sql_commands.select_dp_actions(self.idGame)
         for act in actions:
             act = act[0]
-            time_sleep = len(act) / 8
-            await asyncio.sleep(time_sleep)
+            time_sleep = len(act) / 5.5
             respondRoom(f"**{act}**", self.room)
+            await asyncio.sleep(time_sleep)
         
+        self.final_code_func()
+
+    def final_code_func(self):
         final_code = "Equipe 1:\n"
         for player in self.team1_classes:
             player_class = self.playersClasses[player]
@@ -186,10 +200,10 @@ class PostRound():
             final_code += f"{player} | {player_class.name}\nHP:{hp}/{hp_original}\nEfeitos Negativos: {list(negative_effects)}\nEfeitos Positivos: {list(postiive_effects)}\n"
             if player_class.name == "Gambler":
                 final_code += f"Ouro: {gold}"
-            final_code += f"{cooldowns}\n"
+            final_code += f"{cooldowns}\n\n"
         for player in self.team1_dead:
             player_class = self.team1_dead[player]
-            final_code += f"{player} | {player_class.name}\nMORTO\n"
+            final_code += f"{player} | {player_class.name}\nMORTO\n\n"
         final_code += "\nEquipe 2:\n"
         for player in self.team2_classes:
             player_class = self.playersClasses[player]
@@ -202,10 +216,10 @@ class PostRound():
             final_code += f"{player} | {player_class.name}\nHP:{hp}/{hp_original}\nEfeitos Negativos: {list(negative_effects)}\nEfeitos Positivos: {list(postiive_effects)}\n"
             if player_class.name == "Gambler":
                 final_code += f"Ouro: {gold}"
-            final_code += f"{cooldowns}\n"
+            final_code += f"{cooldowns}\n\n"
         for player in self.team2_dead:
             player_class = self.team1_dead[player]
-            final_code += f"{player} | {player_class.name}\nMORTO"
+            final_code += f"{player} | {player_class.name}\nMORTO\n\n"
 
         respondRoom(f"!code {final_code}", self.room)
 

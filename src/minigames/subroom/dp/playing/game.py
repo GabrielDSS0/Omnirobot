@@ -1,6 +1,7 @@
 import random
 
 from data.dp.classes.classes import classes_dict
+from data.dp.abilities.abilities import abilities_dict
 
 from src.vars import Varlist
 from src.sending import *
@@ -9,10 +10,11 @@ from src.minigames.subroom.dp.playing.acts.calc import ActsCalculator
 from src.minigames.subroom.dp.playing.acts.endround import PostRound
 
 class GameCommands():
-    def __init__(self, host):
+    def __init__(self, host, room_simplified):
         self.idGame: int
         self.round: int = 0
         self.host = host
+        self.room_simplified = room_simplified
         self.room = Varlist.room
         self.players = []
         self.team1 = []
@@ -81,14 +83,34 @@ class GameCommands():
 
         if len(list(self.playersClasses)) == len(self.players):
             respondPM(self.senderID, "Todas as classes foram atribuídas!")
+            for player in self.playersClasses:
+                player_class = self.playersClasses[player]
+                special_ability = player_class.default_abilities[-1]
+                special_ability_cooldown = abilities_dict[special_ability].cooldown
+                if not (special_ability_cooldown == 0):
+                    player_class.cooldowns[special_ability] = special_ability_cooldown
+            self.round = 1
+            self.verify_spirit_trapper()
+    
+    def verify_spirit_trapper(self):
+        for player in self.playersClasses:
+            player_class = self.playersClasses[player]
+            if player_class.name == "Spirit" and self.round == 1:
+                respondPM(self.host, f"É necessário anexar um possuído para o Spirit {player}. Digite @spirit [sala], [jogador], [possúido]")
+            if player_class.name == "Trapper":
+                respondPM(self.host, f"É necessário plantar uma armadilha de Trapper em um aliado de {player}. Digite @trapper [sala], [jogador Trapper], [jogador-armadilha]")
 
     def act(self):
         player = self.commandParams[1].strip()
+        player_class = self.playersClasses[player]
         act_name = self.commandParams[2].strip()
         targets = ""
         if len(self.commandParams) > 3:
             targets = self.commandParams[3:]
-        act: ActsCalculator = ActsCalculator(self.idGame, player, act_name, targets, self.playersClasses, self.team1_classes, self.team2_classes, self.playersDead, self.team1_dead, self.team2_dead)
+        if act_name in player_class.cooldowns:
+            return respondPM(self.senderID, "Essa habilidade está em cooldown.")
+        act: ActsCalculator = ActsCalculator(self.idGame, player, act_name, targets, self.playersClasses, self.team1_classes, self.team2_classes, self.playersDead,
+                                     self.team1_dead, self.team2_dead, self.round)
         if targets:
             respondPM(self.senderID, f"{player} utilizará a habilidade {act_name}. Alvos: {', '.join(targets)}")
         else:
@@ -110,13 +132,19 @@ class GameCommands():
                 self.startRound = True
                 act.startRound()
             self.playersClasses, self.team1_classes, self.team2_classes, self.playersDead, self.team1_dead, self.team2_dead, self.end_game = act.controller()
+            if self.end_game:
+                break
         postRoundInstance: PostRound = PostRound(self.idGame, self.room, self.playersClasses, self.team1_classes, self.team2_classes, self.team1_dead, self.team2_dead)
         if not (self.end_game):
-            postRoundInstance.controller()
-            self.round += 1
+            self.end_game = postRoundInstance.controller()
         asyncio.create_task(postRoundInstance.writing_actions())
+        if self.end_game:
+            self.end_game_func()
+            return
         self.abilities_order.clear()
+        self.round += 1
         self.startRound = False
+        self.verify_spirit_trapper()
 
     def spirit(self):
         player_spirit = self.commandParams[1].strip()
@@ -130,7 +158,17 @@ class GameCommands():
         possessed_class.positive_effects["ESCUDO"] = {"VALOR": shield_value, "ROUNDS": 2}
 
     def trapper(self):
-        player = self.commandParams[1].strip()
         target = self.commandParams[2].strip()
         target_class = self.playersClasses[target]
         target_class.other_effects["TRAPPER00"] = {"ROUNDS": 1}
+    
+    def end_game_func(self):
+        equipeVencedora = ""
+        if not (self.team1_classes):
+            equipeVencedora = "equipe 2"
+        else:
+            equipeVencedora = "equipe 1"
+        respondRoom(f"A partida acabou!! A {equipeVencedora} venceu!!", self.room)
+        del self.dpGames[self.host][self.room_simplified]
+        if not (self.dpGames[self.host]):
+            del self.dpGames[self.host]

@@ -23,7 +23,7 @@ class RedirectingFunction():
 
         if command_permission == 'host':
             if self.senderID not in self.dpGames or not (self.groupchat_simplified in self.dpGames[self.senderID]):
-                dpGame: GameCommands = GameCommands(self.senderID)
+                dpGame: GameCommands = GameCommands(self.senderID, self.groupchat_simplified)
                 Varlist.host = self.senderID
                 if not (self.senderID in self.dpGames):
                     self.dpGames[self.senderID] =  {

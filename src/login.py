@@ -1,7 +1,6 @@
 import json
 import requests
 import logging
-import asyncio
 
 from src.commands_list import commands_dp, commands_mq, commands_leaderboard
 from src.vars import Varlist

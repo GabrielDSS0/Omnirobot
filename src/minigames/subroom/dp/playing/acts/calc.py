@@ -5,7 +5,8 @@ from data.dp.abilities.abilities import abilities_dict
 from data.dp.abilities.extra_abilities import extrabilities_dict
 
 class ActsCalculator():
-    def __init__(self, idGame, player, ability, targets, players_classes, team1_classes, team2_classes, players_dead, team1_dead, team2_dead) -> None:
+    def __init__(self, idGame, player, ability, targets, players_classes, team1_classes, 
+                 team2_classes, players_dead, team1_dead, team2_dead, round) -> None:
         self.idGame = idGame
         self.player = player
         self.ability = ability
@@ -16,6 +17,7 @@ class ActsCalculator():
         self.players_dead = players_dead
         self.team1_dead = team1_dead
         self.team2_dead = team2_dead
+        self.round = round
         self.damages = {}
         self.damagePerTarget = {}
         self.enemyTeam = {}
@@ -77,14 +79,17 @@ class ActsCalculator():
         player_class = self.players_classes[player]
         if "PROVOCADO" in player_class.negative_effects:
             taunter = player_class.negative_effects["PROVOCADO"]["JOGADOR"]
+            if taunter in self.players_dead:
+                player_class.negative_effects.pop("PROVOCADO")
+                return targets
             enemyTeam = self.enemyTeam if player in self.enemyTeam else self.playerTeam
             targets_set = set(targets)
             enemies_set = set(enemyTeam)
             intersection = targets_set.intersection(enemies_set)
             if intersection:
-                targets = list(targets_set - enemies_set).append(taunter)
+                targets = list(targets_set - enemies_set).extend([taunter] * len(targets_set))
+        
 
-            self.makeAction(f"{taunter} puxou o que {player} utilizaria em {intersection}, já que {player} está provocado!")
 
         return targets
 
@@ -161,6 +166,18 @@ class ActsCalculator():
             player_class.gold += 5
         return True
     
+    def check_all(self, player):
+        if self.check_end():
+            return "END"
+        death = self.check_death(player)    
+        if self.check_end():
+            return "END"
+        if death:
+            return "DEATH"
+        elif self.check_immunity(player):
+            return "IMMUNITY"
+        return
+    
     def check_death(self, player):
         player_class = self.players_classes[player]
         if player_class.hp <= 0:
@@ -184,6 +201,7 @@ class ActsCalculator():
     
     def check_end(self):
         if not (self.team1_classes) or not (self.team2_classes):
+            self.end_game = True
             return True
         return
     
@@ -222,13 +240,11 @@ class ActsCalculator():
         player_class = self.players_classes[player]
 
         if player in self.team1_classes:
-            playerTeam = self.team1_classes
             enemyTeam = self.team2_classes
         else:
-            playerTeam = self.team2_classes
             enemyTeam = self.team1_classes
         
-        self.makeAction(f"{player} causará {damage} de dano em {target}!!")
+        self.makeAction(f"{player} causou {damage} de dano em {target}!!")
 
         shield_value = 0
         trapper3_value = 0
@@ -326,6 +342,7 @@ class ActsCalculator():
             self.make_default_damage(player, damage, target)
 
     def startRound(self):
+        self.makeAction(f"ROUND {self.round}")
         for player in self.players_classes:
             player_class = self.players_classes[player]
             if player in self.team1_classes:
@@ -339,6 +356,17 @@ class ActsCalculator():
             for player in playerTeam:
                 player_class = self.players_classes[player]
                 hpAllies[player] = player_class.hp
+            
+            cooldowns_to_remove = []
+            for move in player_class.cooldowns:
+                cooldown = player_class.cooldowns[move]
+                if cooldown == 1:
+                    cooldowns_to_remove.append(move)
+                else:
+                    player_class.cooldowns[move] = (cooldown - 1)
+            
+            for move in cooldowns_to_remove:
+                player_class.cooldowns.pop(move)
 
             if player_class.name == "Cleric":
                 self.makeAction(f"{player} pode curar o aliado com menos hp em 7 de hp, 30% de chance")
@@ -393,8 +421,8 @@ class ActsCalculator():
                     self.players_classes.other_effects.pop("BERSERKER3")
 
     def basic_attack(self, player, ability, targets):
-        player_class = self.players_classes
-        damage = player_class[player].atk / 10
+        player_class = self.players_classes[player]
+        damage = player_class.atk / 10
         critical = damage * 1.5
         damages = {
             "DAMAGE": damage,
@@ -404,23 +432,23 @@ class ActsCalculator():
         damages, damagesPerAlvo = self.update_damages_and_status(player, ability, targets, damages)
 
         for target in targets:
-            if self.check_end():
-                self.end_game = True
+            check = self.check_all(target)
+            if check == "DEATH":
+                self.makeAction(f"{target} seria golpeado mas morreu!!")
+            elif check == "END":
                 return
-            if self.check_death(target):
-                continue
-            if self.check_immunity(target):
+            elif check == "IMMUNITY":
                 continue
             self.makeAction(f"Alvo: {target}")
-            dodge = self.dodge(target)
+            dodge = self.dodge(target, player)
             if not dodge:
-                critical_rate = self.player_class.cr
-                critical = self.critical(critical_rate)
+                critical_rate = player_class.cr
+                critical = self.critical(critical_rate, player)
                 if critical:
-                    damage = self.damages["CRITICAL"]
+                    damage = damages["CRITICAL"]
                 else:
-                    damage = self.damages["DAMAGE"]
-                self.make_default_damage(target, damage)
+                    damage = damages["DAMAGE"]
+                self.make_default_damage(target, damage, player)
 
     def ability_calc(self):
         self.player_class = self.players_classes[self.player]
@@ -429,14 +457,15 @@ class ActsCalculator():
 
         if self.ability == "warrior1":
             for target in self.targets:
-                self.makeAction(f"{target} vai ser atacado!!")
-                if self.check_end():
-                    self.end_game = True
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
+                    continue
+                elif check == "END":
                     return
-                if self.check_death(target):
+                elif check == "IMMUNITY":
                     continue
-                if self.check_immunity(target):
-                    continue
+                self.makeAction(f"{target} vai ser atacado!!")
                 target_class = self.players_classes[target]
                 dodge = self.dodge(target, self.player)
                 if not dodge:
@@ -461,12 +490,13 @@ class ActsCalculator():
         
         elif self.ability == "warrior2":
             for target in self.targets:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(target):
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
                     continue
-                if self.check_immunity(target):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 target_class = self.players_classes[target]
                 if "PROTEGIDO" in target_class.positive_effects:
@@ -486,70 +516,72 @@ class ActsCalculator():
             maxHp = max(self.hpEnemies, key=self.hpEnemies.get)
             target_class = self.players_classes[maxHp]
             self.makeAction(f"{maxHp} é o inimigo com mais HP, ele que levará o dano da habilidade")
-            dodge = self.dodge(target)
+            dodge = self.dodge(target, self.player)
             if not dodge:
                 critical_rate = self.player_class.cr
-                critical = self.critical(critical_rate)
+                critical = self.critical(critical_rate, self.player)
                 if critical:
                     damage = self.damages["CRITICAL"]
                 else:
                     damage = self.damages["DAMAGE"]
-                self.make_default_damage(target, damage)
+                self.make_default_damage(target, damage, self.player)
         
         elif self.ability == "mage1":
             self.targets = self.enemyTeam
             self.makeAction("Todos os adversários serão atingidos")
             for target in self.targets:
-                self.makeAction(f"Alvo: {target}")
-                if self.check_end():
-                    self.end_game = True
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
+                    continue
+                elif check == "END":
                     return
-                if self.check_death(target):
+                elif check == "IMMUNITY":
                     continue
-                if self.check_immunity(target):
-                    continue
-
+                self.makeAction(f"Alvo: {target}")
                 target_class = self.players_classes[target]
-                dodge = self.dodge(target)
+                dodge = self.dodge(target, self.player)
                 if not dodge:
                     critical_rate = self.player_class.cr
-                    critical = self.critical(critical_rate)
+                    critical = self.critical(critical_rate, self.player)
                     if critical:
                         damage = self.damages["CRITICAL"]
                     else:
                         damage = self.damages["DAMAGE"]
-                    self.make_default_damage(target, damage)
+                    self.make_default_damage(target, damage, self.player)
         
         elif self.ability == "mage2":
             for target in self.targets:
-                self.makeAction(f"{target} recebeu um escudo de fogo de {player}")
-                if self.check_end():
-                    self.end_game = True
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
+                    continue
+                elif check == "END":
                     return
-                if self.check_death(target):
+                elif check == "IMMUNITY":
                     continue
-                if self.check_immunity(target):
-                    continue
+                self.makeAction(f"{target} recebeu um escudo de fogo de {player}")
                 target_class = self.players_classes[target]
                 target_class.other_effects["ESCUDO_DE_FOGO"] = {}
 
         elif self.ability == "mage3":
             for target in self.targets:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(target):
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
                     continue
-                if self.check_immunity(target):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 target_class = self.players_classes[target]
-                dodge = self.dodge(target)
+                dodge = self.dodge(target, self.player)
                 if not dodge:
                     burned = False
                     if "QUEIMADO" in target_class.negative_effects:
                         burned = True
                     critical_rate = self.player_class.cr
-                    critical = self.critical(critical_rate)
+                    critical = self.critical(critical_rate, self.player)
                     if critical and burned:
                         self.makeAction(f"{target} está queimado, então não só levará crítico como também um dano em dobro")
                         damage = self.damages["CRITICAL_BURNED"]
@@ -560,7 +592,7 @@ class ActsCalculator():
                         damage = self.damages["DAMAGE_BURNED"]
                     elif not critical and not burned:
                         damage = self.damages["DAMAGE"]
-                    self.make_default_damage(target, damage)
+                    self.make_default_damage(target, damage, self.player)
 
                     if self.check_death(target):
                         continue
@@ -571,30 +603,34 @@ class ActsCalculator():
 
         elif self.ability == "cleric1":
             for target in self.targets:
-                self.makeAction(f"Ele utilizou a habilidade de dano em {target}")
-                if self.check_end():
-                    self.end_game = True
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
+                    continue
+                elif check == "END":
                     return
-                if self.check_death(target):
+                elif check == "IMMUNITY":
                     continue
-                if self.check_immunity(target):
-                    continue
+                self.makeAction(f"Ele utilizou a habilidade de dano em {target}")
                 target_class = self.players_classes[target]
-                dodge = self.dodge(target)
+                dodge = self.dodge(target, self.player)
                 if not dodge:
                     critical_rate = self.player_class.cr
-                    critical = self.critical(critical_rate)
+                    critical = self.critical(critical_rate, self.player)
                     if critical:
                         damage = self.damages["CRITICAL"]
                     else:
                         damage = self.damages["DAMAGE"]
-                    self.make_default_damage(target, damage)
+                    self.make_default_damage(target, damage, self.player)
 
             self.makeAction(f"Todos os alidos de {self.player} serão curados em 2 de HP")
             for ally in self.playerTeam:
-                if self.check_death(ally):
+                check = self.check_all(ally)
+                if check == "DEATH":
                     continue
-                if self.check_immunity(ally):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 ally_class = self.players_classes[ally]
                 ally_class.hp += 2
@@ -603,12 +639,12 @@ class ActsCalculator():
         
         elif self.ability == "cleric2":
             for target in self.targets:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(target):
+                check = self.check_all(target)
+                if check == "DEATH":
                     continue
-                if self.check_immunity(target):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 target_class = self.players_classes[target]
                 target_class.hp += 8
@@ -628,12 +664,13 @@ class ActsCalculator():
             self.makeAction(f"Todos os aliados de {self.player} ganharão 15 pontos de HP")
             self.makeAction("terão também seus efeitos negativos removidos")
             for target in self.targets:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(target):
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
                     continue
-                if self.check_immunity(target):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 target_class = self.players_classes[target]
                 target_class.hp += 15
@@ -643,22 +680,23 @@ class ActsCalculator():
 
         elif self.ability == "ninja1":
             for target in self.targets:
-                self.makeAction(f"{self.player} atingirá {target}")
-                if self.check_end():
-                    self.end_game = True
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
+                    continue
+                elif check == "END":
                     return
-                if self.check_death(target):
+                elif check == "IMMUNITY":
                     continue
-                if self.check_immunity(target):
-                    continue
+                self.makeAction(f"{self.player} atingirá {target}")
                 target_class = self.players_classes[target]
-                dodge = self.dodge(target)
+                dodge = self.dodge(target, self.player)
                 if not dodge:
                     negative_effects = False
                     if target_class.negative_effects:
                         negative_effects = True
                     critical_rate = self.player_class.cr
-                    critical = self.critical(critical_rate)
+                    critical = self.critical(critical_rate, self.player)
                     if critical and negative_effects:
                         damage = self.damages["DOUBLE_CRITICAL"]
                     elif critical and not negative_effects:
@@ -667,16 +705,17 @@ class ActsCalculator():
                         damage = self.damages["DOUBLE_DAMAGE"]
                     elif not critical and not negative_effects:
                         damage = self.damages["DAMAGE"]
-                    self.make_default_damage(target, damage)
+                    self.make_default_damage(target, damage, self.player)
         
         elif self.ability == "ninja2":
             for target in self.targets:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(target):
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
                     continue
-                if self.check_immunity(target):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 target_class = self.players_classes[target]
                 target_class.other_effects["NINJA2"] = {"ROUNDS": 2, "DR_ORIG": target_class.dr}
@@ -700,25 +739,26 @@ class ActsCalculator():
                 maxHp = max(self.hpEnemies, key=self.hpEnemies.get)
                 self.makeAction(f"{target} é o alvo")
                 while times != 2:
-                    if self.check_end():
-                        self.end_game = True
-                        return
-                    if self.check_death(target):
+                    check = self.check_all(target)
+                    if check == "DEATH":
+                        self.makeAction(f"{target} seria golpeado mas morreu!!")
                         continue
-                    if self.check_immunity(target):
+                    elif check == "END":
+                        return
+                    elif check == "IMMUNITY":
                         continue
                     
                     target_class = self.players_classes[target]
-                    dodge = self.dodge(target)
+                    dodge = self.dodge(target, self.player)
                     if not dodge:
                         times += 1
                         critical_rate = self.player_class.cr
-                        critical = self.critical(critical_rate)
+                        critical = self.critical(critical_rate, self.player)
                         if critical:
                             damage = self.damages["CRITICAL"]
                         else:
                             damage = self.damages["DAMAGE"]
-                        self.make_default_damage(target, damage)
+                        self.make_default_damage(target, damage, self.player)
 
                     if maxHp == target:
                         self.makeAction(f"{self.player} utilizará o golpe mais uma vez, já que {target} era o inimigo com mais HP")
@@ -728,9 +768,12 @@ class ActsCalculator():
                 
         elif self.ability == "paladin2":
             for player in self.playerTeam:
-                if self.check_death(player):
+                check = self.check_all(player)
+                if check == "DEATH":
                     continue
-                if self.check_immunity(player):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 player_class = self.players_classes[player]
                 if "PROTEGIDO" in player_class.positive_effects:
@@ -746,12 +789,13 @@ class ActsCalculator():
         
         elif self.ability == "paladin3":
             for target in self.targets:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(target):
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
                     continue
-                if self.check_immunity(target):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 if "PROTEGIDO" in target_class.positive_effects:
                     effect_value = target_class.positive_effects["PROTEGIDO"]["VALOR"]
@@ -785,12 +829,13 @@ class ActsCalculator():
             ability = self.targets[-1]
             ability_name = abilities_dict[ability].type_name
             for target in self.targets:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(target):
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
                     continue
-                if self.check_immunity(target):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 if not (target == self.targets[-1]):
                     target_class = self.players_classes[target]
@@ -799,12 +844,12 @@ class ActsCalculator():
         
         elif self.ability == "trapper3":
             for player in self.playerTeam:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(player):
+                check = self.check_all(player)
+                if check == "DEATH":
                     continue
-                if self.check_immunity(player):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 player_class = self.players_classes[player]
                 player_class.other_effects["TRAPPER3"] = {"VALOR": 20, "JOGADOR": self.player}
@@ -812,12 +857,13 @@ class ActsCalculator():
         
         elif self.ability == "archer1":
             for target in self.targets:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(target):
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
                     continue
-                if self.check_immunity(target):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 times = 0
                 target_class = self.players_classes[target]
@@ -834,12 +880,12 @@ class ActsCalculator():
 
         elif self.ability == "archer2":
             for player in self.playerTeam:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(player):
+                check = self.check_all(player)
+                if check == "DEATH":
                     continue
-                if self.check_immunity(player):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 player_class = self.players_classes[player]
                 player_class.cr += 10
@@ -870,10 +916,10 @@ class ActsCalculator():
             self.player_class.hp -= 10
             self.makeAction(f"{self.player} perdeu 10 de HP")
 
-            if self.check_death(self.player):
+            check = self.check_all(self.player)
+            if check == "DEATH":
                 return
-            if self.check_end():
-                self.end_game = True
+            elif check == "END":
                 return
 
             aditional_atk = (((self.player_class.hp - self.player_class.__class__().hp) * -1) // 10 % 10) * 2
@@ -883,36 +929,36 @@ class ActsCalculator():
                 self.makeAction(f"{self.player} terá {aditional_atk} a mais de ataque na sua habilidade")
 
             for target in self.targets:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(target):
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
                     continue
-                if self.check_immunity(target):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 target_class = self.players_classes[target]
-                dodge_rate = target_class.dr
-                dodge = self.dodge(target)
+                dodge = self.dodge(target, self.player)
                 if not dodge:
                     critical_rate = self.player_class.cr
-                    critical = self.critical(critical_rate)
+                    critical = self.critical(critical_rate, self.player)
                     if critical:
                         damage = self.damages["CRITICAL"]
                     else:
                         damage = self.damages["DAMAGE"]
-                    self.make_default_damage(target, damage)
+                    self.make_default_damage(target, damage, self.player)
         
         elif self.ability == "berserker2":
             self.player_class.hp -= 10
             self.makeAction(f"{self.player} perdeu 10 de HP")
 
             for player in self.playerTeam:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(player):
+                check = self.check_all(player)
+                if check == "DEATH":
                     continue
-                if self.check_immunity(player):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 player_class = self.players_classes[player]
                 player_class.positive_effects["ROUBOVIDA"] = {"VALOR": 50, "ROUNDS": 1}
@@ -928,36 +974,37 @@ class ActsCalculator():
 
         elif self.ability == "bard1":
             for target in self.targets:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(target):
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
                     continue
-                if self.check_immunity(target):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 self.makeAction(f"{target} é o alvo")
                 target_class = self.players_classes[target]
-                dodge = self.dodge(target)
+                dodge = self.dodge(target, self.player)
                 if not dodge:
                     critical_rate = self.player_class.cr
-                    critical = self.critical(critical_rate)
+                    critical = self.critical(critical_rate, self.player)
                     if critical:
                         damage = self.damages["CRITICAL"]
                     else:
                         damage = self.damages["DAMAGE"]
-                    self.make_default_damage(target, damage)
+                    self.make_default_damage(target, damage, self.player)
                     self.target_class.positive_effects.clear()
                     self.makeAction(f"{target} teve seus efeitos positivos limpos")
         
         elif self.ability == "bard2":
             self.makeAction("Todos os aliados foram fortalecidos e não tem mais efeitos negativos")
             for player in self.playerTeam:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(player):
+                check = self.check_all(player)
+                if check == "DEATH":
                     continue
-                if self.check_immunity(player):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 player_class = self.players_classes[player]
                 if "FORTALECIDO" in target_class.positive_effects:
@@ -972,25 +1019,26 @@ class ActsCalculator():
         elif self.ability == "bard3":
             enemies = len(self.targets)
             for target in self.targets:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(target):
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria alvo mas morreu!!")
                     continue
-                if self.check_immunity(target):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 self.makeAction(f"{target} é o alvo do dano da habilidade")
                 target_class = self.players_classes[target]
                 if self.targets[0] == target:
-                    dodge = self.dodge(target)
+                    dodge = self.dodge(target, self.player)
                     if not dodge:
                         critical_rate = self.player_class.cr
-                        critical = self.critical(critical_rate)
+                        critical = self.critical(critical_rate, self.player)
                         if critical:
                             damage = self.damages["CRITICAL"]
                         else:
                             damage = self.damages["DAMAGE"]
-                        self.make_default_damage(target, damage)
+                        self.make_default_damage(target, damage, self.player)
                         if self.check_death(target):
                             continue
                         self.target_class.positive_effects.clear()
@@ -1015,24 +1063,25 @@ class ActsCalculator():
 
         elif self.ability == "necromancer1":
             for target in self.targets:
-                self.makeAction(f"O dano incidirá em {target}")
-                if self.check_end():
-                    self.end_game = True
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
+                    continue
+                elif check == "END":
                     return
-                if self.check_death(target):
+                elif check == "IMMUNITY":
                     continue
-                if self.check_immunity(target):
-                    continue
+                self.makeAction(f"O dano incidirá em {target}")
                 target_class = self.players_classes[target]
-                dodge = self.dodge(target)
+                dodge = self.dodge(target, self.player)
                 if not dodge:
                     critical_rate = self.player_class.cr
-                    critical = self.critical(critical_rate)
+                    critical = self.critical(critical_rate, self.player)
                     if critical:
                         damage = self.damages["CRITICAL"]
                     else:
                         damage = self.damages["DAMAGE"]
-                    self.make_default_damage(target, damage)
+                    self.make_default_damage(target, damage, self.player)
                     if self.check_death(target):
                         continue
                     if "ENVENENADO" in target_class.negative_effects:
@@ -1043,12 +1092,13 @@ class ActsCalculator():
         
         elif self.ability == "necromancer2":
             for target in self.targets:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(target):
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
                     continue
-                if self.check_immunity(target):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 target_class = self.players_classes[target]
                 if "ENFRAQUECIDO" in target_class.negative_effects:
@@ -1065,18 +1115,16 @@ class ActsCalculator():
 
         elif self.ability == "necromancer3":
             for target in self.targets:
-                if self.check_end():
-                    self.end_game = True
+                check = self.check_all(target)
+                if check == "END":
                     return
-                if self.check_death(target):
-                    continue
-                if self.check_immunity(target):
+                elif check == "IMMUNITY":
                     continue
                 dead_in_same_team = True if (target in self.team1_dead and self.player in self.team1_dead) or (target in self.team2_dead and self.team2_dead) else False
                 if dead_in_same_team:
-                    target_class = self.players_classes[target]
-                else:
                     target_class = self.players_dead[target]
+                else:
+                    target_class = self.players_classes[target]
                 if dead_in_same_team and target in self.players_dead:
                     target_class.other_effects.pop("MORTO")
                     target_class.hp = target_class.__class__().hp * 0.3
@@ -1101,16 +1149,17 @@ class ActsCalculator():
         
         elif self.ability == "gambler1":
             for target in self.targets:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(target):
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
                     continue
-                if self.check_immunity(target):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 target_class = self.players_classes[target]
                 self.makeAction(f"O alvo é {target}")
-                dodge = self.dodge(target)
+                dodge = self.dodge(target, self.player)
                 if not dodge:
                     self.makeAction(f"{target} será atingido, o dano será baseado numa rolagem de dois dados")
                     roll1 = self.roll(10)
@@ -1123,12 +1172,12 @@ class ActsCalculator():
                         }
                     self.damages, self.damagePerTarget = self.update_damages_and_status(self.player, self.ability, [target], self.damages)
                     critical_rate = self.player_class.cr
-                    critical = self.critical(critical_rate)
+                    critical = self.critical(critical_rate, self.player)
                     if critical:
                         damage = self.damages["CRITICAL"]
                     else:
                         damage = self.damages["DAMAGE"]
-                    self.make_default_damage(target, damage)
+                    self.make_default_damage(target, damage, self.player)
         
         elif self.ability == "gambler2":
             self.player_class.other_effects["IMUNIDADE"] = {"ROUNDS": 1}
@@ -1137,12 +1186,13 @@ class ActsCalculator():
         
         elif self.ability == "gambler3":
             for target in self.targets:
-                if self.check_end():
-                    self.end_game = True
-                    return
-                if self.check_death(target):
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
                     continue
-                if self.check_immunity(target):
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
                     continue
                 self.player_class.gold -= 30
                 self.makeAction(f"{self.player} dará roll 2 vezes")
@@ -1191,80 +1241,87 @@ class ActsCalculator():
         
         elif self.ability == "batk":
             self.basic_attack(self.player, self.ability, self.targets)
-        
-        for target in self.targets:
-            target_class = self.players_classes[target]
-            if "ARCHER00" in target_class.other_effects:
-                target_class.dr += self.originalDodgeRate[target]
 
         self.player_class.cooldowns[self.ability] = self.ability_class.cooldown
 
     def extra_ability_calc(self, player, ability, targets, damages):
-            player_class = self.players_classes[player]
-            ability_class = abilities_dict[ability]
+        player_class = self.players_classes[player]
+        ability_class = abilities_dict[ability]
 
-            if ability == "escudodefogo":
-                for target in targets:
-                    if self.check_death(target):
-                        continue
-                    if self.check_immunity(target):
-                        continue
-                    target_class = self.players_classes[target]
-                    dodge = self.dodge(target, player)
-                    if not dodge:
-                        critical_rate = player_class.cr
-                        critical = self.critical(critical_rate)
-                        if critical:
-                            damage = damages["CRITICAL"]
-                        else:
-                            damage = damages["DAMAGE"]
-                        self.make_default_damage(target, damage)
-                        if "ENFRAQUECIDO" in target_class.negative_effects:
-                            effect_value = target_class.negative_effects["ENFRAQUECIDO"]["VALOR"]
-                            effect_value += 20
-                            if effect_value > 90:
-                                effect_value = 90
-                        else:
-                            effect_value = 20
-                        target_class.negative_effects["ENFRAQUECIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
-            
-            if ability == "trapper1_on":
-                for target in targets:
-                    if self.check_death(target):
-                        break
-                    if self.check_immunity(target):
-                        break
-                    target_class = self.players_classes[target]
-                    dodge = self.dodge(target, player)
-                    if not dodge:
-                        if "ESCUDO" in player_class.positive_effects:
-                            shield_value = player_class.positive_effects["ESCUDO"]["VALOR"]
-                            for damage in damages:
-                                damage = damages[damage]
-                                damages[damage] = (damage + shield_value)
-                        critical_rate = player_class.cr
-                        critical = self.critical(critical_rate)
-                        if critical:
-                            damage = damages["CRITICAL"]
-                        else:
-                            damage = damages["DAMAGE"]
-                        self.make_default_damage(target, damage)
+        if ability == "escudodefogo":
+            for target in targets:
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
+                    continue
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
+                    continue
+                target_class = self.players_classes[target]
+                dodge = self.dodge(target, player)
+                if not dodge:
+                    critical_rate = player_class.cr
+                    critical = self.critical(critical_rate, player)
+                    if critical:
+                        damage = damages["CRITICAL"]
+                    else:
+                        damage = damages["DAMAGE"]
+                    self.make_default_damage(target, damage, player)
+                    if "ENFRAQUECIDO" in target_class.negative_effects:
+                        effect_value = target_class.negative_effects["ENFRAQUECIDO"]["VALOR"]
+                        effect_value += 20
+                        if effect_value > 90:
+                            effect_value = 90
+                    else:
+                        effect_value = 20
+                    target_class.negative_effects["ENFRAQUECIDO"] = {"VALOR": effect_value, "ROUNDS": 2}
+        
+        if ability == "trapper1_on":
+            for target in targets:
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
+                    continue
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
+                    continue
+                target_class = self.players_classes[target]
+                dodge = self.dodge(target, player)
+                if not dodge:
+                    if "ESCUDO" in player_class.positive_effects:
+                        shield_value = player_class.positive_effects["ESCUDO"]["VALOR"]
+                        for damage in damages:
+                            damage = damages[damage]
+                            damages[damage] = (damage + shield_value)
+                    critical_rate = player_class.cr
+                    critical = self.critical(critical_rate, player)
+                    if critical:
+                        damage = damages["CRITICAL"]
+                    else:
+                        damage = damages["DAMAGE"]
+                    self.make_default_damage(target, damage, player)
 
-            if ability == "trapper3_on":
-                for target in targets:
-                    if self.check_death(target):
-                        break
-                    if self.check_immunity(target):
-                        break
-                    target_class = self.players_classes[target]
-                    dodge = self.dodge(target, player)
-                    if not dodge:
-                        critical_rate = player_class.cr
-                        critical = self.critical(critical_rate)
-                        if critical:
-                            damage = damages["CRITICAL"]
-                        else:
-                            damage = damages["DAMAGE"]
-                        self.make_default_damage(target, damage)
+        if ability == "trapper3_on":
+            for target in targets:
+                check = self.check_all(target)
+                if check == "DEATH":
+                    self.makeAction(f"{target} seria golpeado mas morreu!!")
+                    continue
+                elif check == "END":
+                    return
+                elif check == "IMMUNITY":
+                    continue
+                target_class = self.players_classes[target]
+                dodge = self.dodge(target, player)
+                if not dodge:
+                    critical_rate = player_class.cr
+                    critical = self.critical(critical_rate, player)
+                    if critical:
+                        damage = damages["CRITICAL"]
+                    else:
+                        damage = damages["DAMAGE"]
+                    self.make_default_damage(target, damage, player)
 
-            player_class.cooldowns[ability] = ability_class.cooldown
+        player_class.cooldowns[ability] = ability_class.cooldown

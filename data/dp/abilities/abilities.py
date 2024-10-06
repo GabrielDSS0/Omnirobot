@@ -269,5 +269,5 @@ abilities_dict = {
     "spirit1": Spirit_01,
     "spirit2": Spirit_02,
     "spirit3": Spirit_03,
-    
+    "batk": Basic_Atk,
 }
