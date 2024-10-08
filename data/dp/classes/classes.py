@@ -146,5 +146,5 @@ classes_dict = {
     "bard": Bard,
     "necromancer": Necromancer,
     "gambler": Gambler,
-    "spirit": Gambler,
+    "spirit": Spirit,
 }

@@ -17,7 +17,7 @@ db = psycopg2.connect(database=database,
 
 cursor = db.cursor()
 
-commands_sql_var = Commands_SQL() 
+commands_sql_var = Commands_SQL()
 
 Varlist.db = db
 Varlist.cursor = cursor

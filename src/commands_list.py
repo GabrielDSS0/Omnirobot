@@ -11,7 +11,8 @@ commands_dp = {
             'defclass':  {'params': ["sala", "jogador", "classe"], 'perm': 'host', 'type': 'pm', 'need_room': True},
             'act':  {'params': ["sala", "jogador", "ação"], 'perm': 'host', 'type': 'pm', 'need_room': True},
             'actsconfirm':  {'params': ["sala"], 'perm': 'host', 'type': 'both', 'need_room': True},
-            'trapper': {'params': ["sala", "jogador", "alvo"], 'perm': 'host', 'type': 'both', 'need_room': True}
+            'trapper': {'params': ["sala", "jogador", "alvo"], 'perm': 'host', 'type': 'both', 'need_room': True},
+            'spirit': {'params': ["sala", "jogador", "possuído"], 'perm': 'host', 'type': 'both', 'need_room': True},
 }
 
 commands_mq = {

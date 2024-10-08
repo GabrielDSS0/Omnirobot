@@ -78,15 +78,17 @@ class Control():
             else:
                 self.room = self.room[1:]
                 if self.room[:9] == "groupchat":
-                    Varlist.groupchat_name_simplified = self.room.split("-")[2]
+                    Varlist.groupchat_name_complete = self.room
+
 
         elif self.msgType == "pm":
             self.room = self.commandParams[0].strip()
+            Varlist.groupchat_name_complete = f"groupchat-{self.room}"
             if self.room[:9] == "groupchat":
                 self.room = re.sub('[^0-9a-zA-Z-]+', '', self.room).lower()
             else:
                 self.room = toID(self.room)
-        
+
         Varlist.room = self.room
     
     def determinate_is_a_invite(self):

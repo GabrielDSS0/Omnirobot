@@ -9,6 +9,7 @@ class Varlist:
    msgSplited: list =  []
    commandParams: list = []
    questions: dict = {}
+   hosts_groupchats: dict = {}
    dpGames: dict = {}
    command: str = ""
    sender: str = ""
@@ -16,4 +17,4 @@ class Varlist:
    content: str = ""
    msgType: str = ""
    room: str = ""
-   groupchat_name_simplified: str = ""
+   groupchat_name_complete: str = ""

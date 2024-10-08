@@ -32,11 +32,11 @@ class PostRound():
         return roll
     
     def check_death(self, player):
-        player_class = self.players_classes[player]
+        player_class = self.playersClasses[player]
         if player_class.hp <= 0:
             player_class.hp = 0
             if player not in self.players_dead:
-                self.players_classes.pop(player)
+                self.playersClasses.pop(player)
                 if player in self.team1_classes: 
                     self.team1_classes.pop(player)
                     self.team1_dead[player] = player_class
@@ -176,12 +176,24 @@ class PostRound():
                     continue
                 if self.check_end():
                     break
+            
+            cooldowns_to_remove = []
+            for move in player_class.cooldowns:
+                cooldown = player_class.cooldowns[move]
+                if cooldown == 1:
+                    cooldowns_to_remove.append(move)
+                else:
+                    player_class.cooldowns[move] = (cooldown - 1)
+
+            for move in cooldowns_to_remove:
+                player_class.cooldowns.pop(move)
 
     async def writing_actions(self):
         actions = self.sql_commands.select_dp_actions(self.idGame)
         for act in actions:
             act = act[0]
-            time_sleep = len(act) / 5.5
+            #time_sleep = len(act) / 6.3
+            time_sleep = 1
             respondRoom(f"**{act}**", self.room)
             await asyncio.sleep(time_sleep)
         
@@ -199,7 +211,7 @@ class PostRound():
             cooldowns = player_class.cooldowns
             final_code += f"{player} | {player_class.name}\nHP:{hp}/{hp_original}\nEfeitos Negativos: {list(negative_effects)}\nEfeitos Positivos: {list(postiive_effects)}\n"
             if player_class.name == "Gambler":
-                final_code += f"Ouro: {gold}"
+                final_code += f"Ouro: {gold}\n"
             final_code += f"{cooldowns}\n\n"
         for player in self.team1_dead:
             player_class = self.team1_dead[player]
@@ -215,7 +227,7 @@ class PostRound():
             cooldowns = player_class.cooldowns
             final_code += f"{player} | {player_class.name}\nHP:{hp}/{hp_original}\nEfeitos Negativos: {list(negative_effects)}\nEfeitos Positivos: {list(postiive_effects)}\n"
             if player_class.name == "Gambler":
-                final_code += f"Ouro: {gold}"
+                final_code += f"Ouro: {gold}\n"
             final_code += f"{cooldowns}\n\n"
         for player in self.team2_dead:
             player_class = self.team1_dead[player]

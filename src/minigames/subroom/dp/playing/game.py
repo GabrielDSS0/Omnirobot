@@ -1,4 +1,7 @@
 import random
+import threading
+
+from psclient import toID
 
 from data.dp.classes.classes import classes_dict
 from data.dp.abilities.abilities import abilities_dict
@@ -10,11 +13,11 @@ from src.minigames.subroom.dp.playing.acts.calc import ActsCalculator
 from src.minigames.subroom.dp.playing.acts.endround import PostRound
 
 class GameCommands():
-    def __init__(self, host, room_simplified):
+    def __init__(self, host, groupchat_name_complete):
         self.idGame: int
         self.round: int = 0
         self.host = host
-        self.room_simplified = room_simplified
+        self.groupchat_name_complete = groupchat_name_complete
         self.room = Varlist.room
         self.players = []
         self.team1 = []
@@ -38,6 +41,8 @@ class GameCommands():
         self.sender = Varlist.sender
         self.senderID = Varlist.senderID
         self.commandParams = Varlist.commandParams
+        if self.groupchat_name_complete in self.commandParams:
+            self.commandParams.remove(self.groupchat_name_complete)
         func = getattr(inst, name_func)
         func()
 
@@ -55,6 +60,9 @@ class GameCommands():
         for player in players:
             player = player.strip()
             self.players.append(player)
+        
+        if (len(self.players) % 2) != 0:
+            return respondRoom(f"O número de jogadores deve ser par.")
 
         half = int(len(self.players) / 2)
 
@@ -67,12 +75,18 @@ class GameCommands():
         team = "Equipe 1" if self.priorityTeam == self.team1 else "Equipe 2"
         respondRoom(f"A equipe que terá prioridade de habilidades no primeiro round será a: {team}", self.room)
         
-        asyncio.create_task(self.asyncio_sleep_func(2))
-        respondRoom(f"Equipes definidas! Peço agora ao host para que defina as classes dos respectivos jogadores com o comando @defclass em minha PM.", self.room)
+        thread_timer = threading.Timer(2, respondRoom, args=["Equipes definidas! Peço agora ao host para que defina as classes dos respectivos jogadores com o comando @defclass em minha PM.", self.room])
+        thread_timer.start()
     
     def defclass(self):
-        player = self.commandParams[1].strip()
-        player_class = self.commandParams[-1].strip()
+        player = self.commandParams[0].strip()
+        player_class = toID(self.commandParams[-1].strip())
+
+        if player not in self.players:
+            return respondPM(self.senderID, "O usuário indicado não está na sala indicada.")
+        if not (player_class in classes_dict):
+            return respondPM(self.senderID, "A classe indicada não existe.")
+
         player_class = classes_dict[player_class]()
         self.playersClasses[player] = player_class
         if player in self.team1:
@@ -101,12 +115,21 @@ class GameCommands():
                 respondPM(self.host, f"É necessário plantar uma armadilha de Trapper em um aliado de {player}. Digite @trapper [sala], [jogador Trapper], [jogador-armadilha]")
 
     def act(self):
-        player = self.commandParams[1].strip()
+        player = self.commandParams[0].strip()
+        if not (player in self.playersClasses):
+            return respondPM(self.host, f"{player} não está na partida.")
+        
         player_class = self.playersClasses[player]
-        act_name = self.commandParams[2].strip()
-        targets = ""
-        if len(self.commandParams) > 3:
-            targets = self.commandParams[3:]
+        act_name = self.commandParams[1].strip()
+        if not (act_name in abilities_dict):
+            return respondPM(self.host, f"{act_name} não é uma habilidade válida.")
+        
+        targets = []
+        if len(self.commandParams) > 2:
+            targets = self.commandParams[2:]
+        for target in targets:
+            if not (target.strip() in self.players):
+                return respondPM(self.host, f"{target} não está entre os jogadores da partida.")
         if act_name in player_class.cooldowns:
             return respondPM(self.senderID, "Essa habilidade está em cooldown.")
         act: ActsCalculator = ActsCalculator(self.idGame, player, act_name, targets, self.playersClasses, self.team1_classes, self.team2_classes, self.playersDead,
@@ -127,13 +150,16 @@ class GameCommands():
                 abilityPriority += 0.5
             abilitiesPriority[act] = abilityPriority
         actsSequence = dict(sorted(abilitiesPriority.items(), key=lambda item: item[1], reverse=True))
+        
         for act in actsSequence:
+            print(act)
             if not (self.startRound):
                 self.startRound = True
                 act.startRound()
             self.playersClasses, self.team1_classes, self.team2_classes, self.playersDead, self.team1_dead, self.team2_dead, self.end_game = act.controller()
             if self.end_game:
                 break
+
         postRoundInstance: PostRound = PostRound(self.idGame, self.room, self.playersClasses, self.team1_classes, self.team2_classes, self.team1_dead, self.team2_dead)
         if not (self.end_game):
             self.end_game = postRoundInstance.controller()
@@ -144,23 +170,33 @@ class GameCommands():
         self.abilities_order.clear()
         self.round += 1
         self.startRound = False
+        self.priorityTeam = self.team1 if self.priorityTeam == (self.team2) else self.team2
         self.verify_spirit_trapper()
 
     def spirit(self):
-        player_spirit = self.commandParams[1].strip()
+        player_spirit = self.commandParams[0].strip()
+        if not (player_spirit in self.playersClasses):
+            return respondPM(self.host, f"{player_spirit} não está entre os jogadores da partida.")
         player_possessed = self.commandParams[-1].strip()
+        if not (player_spirit in self.playersClasses):
+            return respondPM(self.host, f"{player_possessed} não está entre os jogadores da partida.")
         spirit_class = self.playersClasses[player_spirit]
         possessed_class = self.playersClasses[player_possessed]
         spirit_class.other_effects["POSSUINDO"]  = player_possessed
+        spirit_class.other_effects["IMUNIDADE"] = {"ROUNDS": -1}
         shield_value = 10
         if "ESCUDO" in possessed_class.positive_effects:
             shield_value += possessed_class.positive_effects["ESCUDO"]
         possessed_class.positive_effects["ESCUDO"] = {"VALOR": shield_value, "ROUNDS": 2}
+        respondPM(self.host, f"{player_possessed} foi possuído por {player_spirit}!")
 
     def trapper(self):
-        target = self.commandParams[2].strip()
+        target = self.commandParams[1].strip()
+        if not (target in self.playersClasses):
+            return respondPM(self.host, f"{self.senderID} não está dentre os jogadores da partida.")
         target_class = self.playersClasses[target]
-        target_class.other_effects["TRAPPER00"] = {"ROUNDS": 1}
+        target_class.other_effects["TRAPPER00"] = {"ROUNDS": 1, "VEZES": 2}
+        respondPM(self.host, f"{target} está com a armadilha!!")
     
     def end_game_func(self):
         equipeVencedora = ""
@@ -169,6 +205,6 @@ class GameCommands():
         else:
             equipeVencedora = "equipe 1"
         respondRoom(f"A partida acabou!! A {equipeVencedora} venceu!!", self.room)
-        del self.dpGames[self.host][self.room_simplified]
+        del self.dpGames[self.host][self.groupchat_name_complete]
         if not (self.dpGames[self.host]):
             del self.dpGames[self.host]
