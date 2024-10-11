@@ -1,6 +1,8 @@
 import random
 
 from src.vars import Varlist
+
+from data.dp.classes.classes import classes_dict
 from data.dp.abilities.abilities import abilities_dict
 from data.dp.abilities.extra_abilities import extrabilities_dict
 
@@ -321,6 +323,89 @@ class ActsCalculator():
                 target_class.other_effects["TRAPPER00"]["VEZES"] = times - 1
             self.make_default_damage(player, damage, target)
 
+    def startRound(self):
+        self.makeAction(f"ROUND {self.round}")
+        players_classes = self.players_classes.copy()
+        for player in players_classes:
+            check = self.check_all(player)
+            if check == "DEATH":
+                continue
+            elif check == "END":
+                return
+
+            player_class = self.players_classes[player]
+
+                        
+            cooldowns_to_remove = []
+            for move in player_class.cooldowns:
+                cooldown = player_class.cooldowns[move]
+                if cooldown <= 0:
+                    cooldowns_to_remove.append(move)
+                else:
+                    player_class.cooldowns[move] = (cooldown - 1)
+
+            for move in cooldowns_to_remove:
+                player_class.cooldowns.pop(move)
+
+            if player in self.team1_classes:
+                playerTeam = self.team1_classes
+                enemyTeam = self.team2_classes
+            else:
+                playerTeam = self.team2_classes
+                enemyTeam = self.team1_classes
+
+            hpAllies = {}
+            for player in playerTeam:
+                player_class = self.players_classes[player]
+                hpAllies[player] = player_class.hp
+
+            if player_class.name == "Cleric" and self.round != 1:
+                self.makeAction(f"{player} pode curar o aliado com menos hp em 7 de hp, 30% de chance")
+                roll = self.roll(100)
+                if roll <= 30:
+                    minHp = min(hpAllies, key=hpAllies.get)
+                    targets = [minHp]
+                    for target in targets:
+                        target_class = self.players_classes[target]
+                        self.makeAction(f"{target} foi curado em 7 de hp!!")
+                        target_class.hp += 7
+                        if target_class.hp > target_class.__class__().hp:
+                            target_class.hp = target_class.__class__().hp
+
+            if "TRAPPER1" in player_class.other_effects:
+                self.makeAction(f"{player} ativou sua habilidade de ataque!")
+                ability_name = "trapper1_on"
+                enemy = random.choice(list(enemyTeam))
+                damages, damagePerAlvo = self.update_damages_and_status(player, ability_name, [enemy])
+                self.extra_ability_calc(player, ability_name, [enemy], damages)
+
+            if "TRAPPER3" in player_class.other_effects:
+                difference = self.check_trapper3(playerTeam)
+
+                if difference < 0:
+                    player_trapper = player_class.other_effects["TRAPPER3"]["JOGADOR"]
+                    self.makeAction(f"Ainda há {difference} do escudo de vida do Trapper sobrando!!")
+                    self.makeAction(f"{player_trapper} dará então {difference} de dano no inimigo com menos Hp!!")
+                    ability_name = "trapper3_on"
+                    minHp = min(self.hpEnemies, key=self.hpEnemies.get)
+                    targets = [minHp]
+                    damages = {"DAMAGE": difference,
+                               "CRITICAL": difference * 1.5}
+                    damages, damagePerAlvo = self.update_damages_and_status(player_trapper, ability_name, targets, damages)
+                    self.extra_ability_calc(player_trapper, ability_name, targets, damages)
+                for player in playerTeam:
+                    player_class = playerTeam[player]
+                    player_class.other_effects.pop("TRAPPER3")
+
+            if "BERSERKER3" in player_class.other_effects:
+                self.player_class.hp += 15
+                self.makeAction(f"{player} se curará em 15 de HP (habilidade especial)!")
+                if player_class.hp > player_class.__class__().hp:
+                    player_class.hp = player_class.__class__().hp
+                rounds = player_class.other_effects["BERSERKER3"]["ROUNDS"]
+                player_class.other_effects["BERSERKER3"]["ROUNDS"] = (rounds - 1)
+                if rounds == 0:
+                    player_class.other_effects.pop("BERSERKER3")
 
     def make_default_damage(self, target, damage, player="", critical=False):
         if not player:
@@ -394,94 +479,6 @@ class ActsCalculator():
         self.mage_2(player, target)
         self.trapper_passive(player, target)
 
-    def startRound(self):
-        self.makeAction(f"ROUND {self.round}")
-        players_classes = self.players_classes.copy()
-        for player in players_classes:
-            check = self.check_all(player)
-            if check == "DEATH":
-                continue
-            elif check == "END":
-                return
-
-            player_class = self.players_classes[player]
-
-                        
-            cooldowns_to_remove = []
-            for move in player_class.cooldowns:
-                cooldown = player_class.cooldowns[move]
-                if cooldown <= 0:
-                    cooldowns_to_remove.append(move)
-                else:
-                    player_class.cooldowns[move] = (cooldown - 1)
-
-            for move in cooldowns_to_remove:
-                player_class.cooldowns.pop(move)
-
-            if player in self.team1_classes:
-                playerTeam = self.team1_classes
-                enemyTeam = self.team2_classes
-            else:
-                playerTeam = self.team2_classes
-                enemyTeam = self.team1_classes
-
-            hpAllies = {}
-            for player in playerTeam:
-                player_class = self.players_classes[player]
-                hpAllies[player] = player_class.hp
-
-            if player_class.name == "Cleric" and self.round != 1:
-                self.makeAction(f"{player} pode curar o aliado com menos hp em 7 de hp, 30% de chance")
-                roll = self.roll(100)
-                if roll <= 30:
-                    minHp = min(hpAllies, key=hpAllies.get)
-                    targets = [minHp]
-                    for target in targets:
-                        target_class = self.players_classes[target]
-                        self.makeAction(f"{target} foi curado em 7 de hp!!")
-                        target_class.hp += 7
-                        if target_class.hp > target_class.__class__().hp:
-                            target_class.hp = target_class.__class__().hp
-
-            if "TRAPPER1" in player_class.other_effects:
-                self.makeAction(f"{player} ativou sua habilidade de ataque!")
-                ability_name = "trapper1_on"
-                enemy = random.choice(list(enemyTeam))
-                damages, damagePerAlvo = self.update_damages_and_status(player, ability_name, [enemy])
-                self.extra_ability_calc(player, ability_name, [enemy], damages)
-
-            if "TRAPPER3" in player_class.other_effects:
-                trap_hp = 0
-                for ally in playerTeam:
-                    ally_class = playerTeam[ally]
-                    trap_hp += ally_class.other_effects["TRAPPER3"]["VALOR"]
-                difference = 20 - ((20 * len(playerTeam)) - trap_hp)
-
-                if difference < 0:
-                    player_trapper = player_class.other_effects["TRAPPER3"]["JOGADOR"]
-                    self.makeAction(f"Ainda há {difference} do escudo de vida do Trapper sobrando!!")
-                    self.makeAction(f"{player_trapper} dará então {difference} de dano no inimigo com menos Hp!!")
-                    ability_name = "trapper3_on"
-                    minHp = min(self.hpEnemies, key=self.hpEnemies.get)
-                    targets = [minHp]
-                    damages = {"DAMAGE": difference,
-                               "CRITICAL": difference * 1.5}
-                    damages, damagePerAlvo = self.update_damages_and_status(player_trapper, ability_name, targets, damages)
-                    self.extra_ability_calc(player_trapper, ability_name, targets, damages)
-                for player in playerTeam:
-                    player_class = playerTeam[player]
-                    player_class.other_effects.pop("TRAPPER3")
-
-            if "BERSERKER3" in player_class.other_effects:
-                self.player_class.hp += 15
-                self.makeAction(f"{player} se curará em 15 de HP (habilidade especial)!")
-                if player_class.hp > player_class.__class__().hp:
-                    player_class.hp = player_class.__class__().hp
-                rounds = player_class.other_effects["BERSERKER3"]["ROUNDS"]
-                player_class.other_effects["BERSERKER3"]["ROUNDS"] = (rounds - 1)
-                if rounds == 0:
-                    player_class.other_effects.pop("BERSERKER3")
-
     def basic_attack(self, player, ability, targets):
         player_class = self.players_classes[player]
         damage = player_class.atk / 10
@@ -518,7 +515,13 @@ class ActsCalculator():
     def ability_calc(self):
         self.player_class = self.players_classes[self.player]
         
-        self.makeAction(f"{self.player} usa sua {self.ability_class.type_name}!!")
+        if not (self.ability == "batk") and (self.ability in self.player_class.default_abilities):
+            self.makeAction(f"{self.player} usa sua {self.ability_class.type_name}!!")
+        elif not (self.ability in self.player_class.default_abilities):
+            class_original = classes_dict[self.ability[:-1]]().name
+            self.makeAction(f"{self.player} utiliza a {self.ability_class.type_name} de {class_original}!")
+        else:
+            self.makeAction(f"{self.player} usa seu {self.ability_class.type_name}!!")
 
         if self.ability == "warrior1":
             for target in self.targets:
@@ -626,8 +629,7 @@ class ActsCalculator():
         elif self.ability == "mage2":
             for target in self.targets:
                 check = self.check_all(target)
-                if check == "DEATH":                    
-                    self.makeAction(f"{target} seria golpeado mas morreu!!")
+                if check == "DEATH":
                     continue
                 elif check == "END":
                     return
@@ -795,7 +797,6 @@ class ActsCalculator():
             for target in self.targets:
                 check = self.check_all(target)
                 if check == "DEATH":                    
-                    self.makeAction(f"{target} seria golpeado mas morreu!!")
                     continue
                 elif check == "END":
                     return
@@ -1011,13 +1012,11 @@ class ActsCalculator():
         elif self.ability == "berserker1":
             self.player_class.hp -= 10
             self.makeAction(f"{self.player} perdeu 10 de HP")
-
             check = self.check_all(self.player)
             if check == "DEATH":
                 return
             elif check == "END":
                 return
-
             aditional_atk = (((self.player_class.hp - self.player_class.__class__().hp) * -1) // 10 % 10) * 2
             for damage in self.damages:
                 self.damages[damage] += aditional_atk
@@ -1201,8 +1200,7 @@ class ActsCalculator():
         elif self.ability == "necromancer2":
             for target in self.targets:
                 check = self.check_all(target)
-                if check == "DEATH":                    
-                    self.makeAction(f"{target} seria golpeado mas morreu!!")
+                if check == "DEATH":
                     continue
                 elif check == "END":
                     return
@@ -1245,9 +1243,19 @@ class ActsCalculator():
                     if target in self.team1_dead:
                         self.team1_classes[target] = target_class
                         self.team1_dead.pop(target)
+                        for player in self.team1_classes:
+                            player_class = self.players_classes[player]
+                            if "TRAPPER3" in player_class.other_effects:
+                                player_trapper3 = player_class.other_effects["TRAPPER3"]
+                                target_class.other_effects["TRAPPER3"] = {"VALOR": 20, "JOGADOR": player_trapper3}
                     else:
                         self.team2_classes[target] = target_class
                         self.team2_dead.pop(target)
+                        for player in self.team2_classes:
+                            player_class = self.players_classes[player]
+                            if "TRAPPER3" in player_class.other_effects:
+                                player_trapper3 = player_class.other_effects["TRAPPER3"]
+                                target_class.other_effects["TRAPPER3"] = {"VALOR": 20, "JOGADOR": player_trapper3}
                     self.makeAction(f"{self.player} reviveu {target}!!")
                     self.makeAction(f"{target} está com 30% de seu HP e envenenado!")
                 elif target in self.players_classes:

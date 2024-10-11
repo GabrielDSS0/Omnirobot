@@ -13,6 +13,7 @@ commands_dp = {
             'actsconfirm':  {'params': ["sala"], 'perm': 'host', 'type': 'both', 'need_room': True},
             'trapper': {'params': ["sala", "jogador", "alvo"], 'perm': 'host', 'type': 'both', 'need_room': True},
             'spirit': {'params': ["sala", "jogador", "possuído"], 'perm': 'host', 'type': 'both', 'need_room': True},
+            'makehost': {'params': ["sala", "novo host"], 'perm': 'host', 'type': 'both', 'need_room': True},
 }
 
 commands_mq = {

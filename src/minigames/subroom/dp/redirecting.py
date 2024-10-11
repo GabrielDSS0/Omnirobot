@@ -30,8 +30,9 @@ class RedirectingFunction():
         if need_room and self.msgType == "room" and len(self.commandParams) < (len(command_params_default) - 1):
             return respondRoom(f"Uso: {prefix}{self.command} **{', '.join(command_params_default[1:])}**", self.groupchat_name_complete)
 
-        elif need_room and self.msgType != "room" and len(self.commandParams) < len(command_params_default) and len(self.hosts_groupchats[self.senderID]) > 1:
-            return respond(self.msgType, f"Uso: {prefix}{self.command} **{', '.join(command_params_default)}**", self.senderID, self.groupchat_name_complete)
+        elif need_room and self.msgType != "room" and len(self.commandParams) < len(command_params_default) and self.senderID in self.hosts_groupchats:
+            if len(self.hosts_groupchats[self.senderID]) > 1:
+                return respond(self.msgType, f"Uso: {prefix}{self.command} **{', '.join(command_params_default)}**", self.senderID, self.groupchat_name_complete)
 
         if command_permission == "host" or command_permission == "adm" or (command_permission == "general" and self.msgType == "room"):
             permission = await self.verify_perm(self.senderID)
@@ -45,7 +46,7 @@ class RedirectingFunction():
             return respondPM(self.senderID, "Este comando deve ser executado somente por PM.")
 
         if command_permission == 'host':
-            if self.senderID not in self.dpGames or not (self.groupchat_name_complete in self.dpGames[self.senderID]):
+            if (self.senderID not in self.dpGames or not (self.groupchat_name_complete in self.dpGames[self.senderID])) and self.command == "startdp":
                 dpGame: GameCommands = GameCommands(self.senderID, self.groupchat_name_complete)
                 Varlist.host = self.senderID
                 if not (self.senderID in self.dpGames):
@@ -57,8 +58,11 @@ class RedirectingFunction():
                         self.groupchat_name_complete: dpGame
                     })
 
+            if self.senderID not in self.dpGames and self.command != "startdp":
+                return respondPM(self.senderID, "Não há um jogo de Dungeons & Pokémon ativo na subsala atualmente.")
+
             inst = self.dpGames[self.senderID][self.groupchat_name_complete]
-            inst.redirect_command(inst, self.command)
+            await inst.redirect_command(inst, self.command)
 
     async def verify_perm(self, senderID):
         if senderID in self.dpGames:

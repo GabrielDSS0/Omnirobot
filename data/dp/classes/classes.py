@@ -20,7 +20,6 @@ class Warrior(ClassDefault):
         self.atk = 70
         self.cr = 20
         self.dr = 0
-        #self.dr = 20
         self.default_abilities = ["batk", "warrior1", "warrior2", "warrior3"]
 
 class Mage(ClassDefault):

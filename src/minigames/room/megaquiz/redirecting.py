@@ -21,6 +21,9 @@ class RedirectingFunction():
         self.questions = Varlist.questions
 
     async def redirect_to_function(self):
+        if self.senderID in self.questions:
+            if len(self.questions[self.senderID]) == 1:
+                self.room = list(self.questions[self.senderID])[0]
         command_permission = commands_mq[self.command]['perm']
         command_params_default = commands_mq[self.command]['params']
         need_room = commands_mq[self.command]['need_room']
@@ -28,8 +31,9 @@ class RedirectingFunction():
         if need_room and self.msgType == "room" and len(self.commandParams) < (len(command_params_default) - 1):
             return respondRoom(f"Uso: {prefix}{self.command} **{', '.join(command_params_default[1:])}**", self.room)
         
-        elif need_room and self.msgType != "room" and len(self.commandParams) < len(command_params_default):
-            return respond(self.msgType, f"Uso: {prefix}{self.command} **{', '.join(command_params_default)}**", self.senderID, self.room)
+        elif need_room and self.msgType != "room" and len(self.commandParams) < len(command_params_default) and self.senderID in self.questions:
+            if len(self.questions[self.senderID]) > 1:
+                return respond(self.msgType, f"Uso: {prefix}{self.command} **{', '.join(command_params_default)}**", self.senderID, self.room)
 
         if command_permission == "host" or command_permission == "adm" or (command_permission == "general" and self.msgType == "room"):
             permission = await self.verify_perm(self.room, self.senderID)
