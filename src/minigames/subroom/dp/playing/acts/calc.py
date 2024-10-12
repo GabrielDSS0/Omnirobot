@@ -498,7 +498,7 @@ class ActsCalculator():
             elif check == "END":
                 return
             elif check == "IMMUNITY":
-                self.makeAction(f"{player} está imune!! Nada o afetará nesta rodada")
+                self.makeAction(f"{target} seria o alvo mas está imune!! Nada o afetará nesta rodada")
                 continue
             
             self.makeAction(f"Alvo: {target}")
@@ -532,10 +532,10 @@ class ActsCalculator():
                 elif check == "END":
                     return
                 elif check == "IMMUNITY":
-                    self.makeAction(f"{player} está imune!! Nada o afetará nesta rodada")
+                    self.makeAction(f"{target} seria o alvo mas está imune!! Nada o afetará nesta rodada")
                     continue
-                
-                self.makeAction(f"{target} vai ser atacado!!")
+
+                self.makeAction(f"{player} vai ser atacado!!")
                 target_class = self.players_classes[target]
                 dodge = self.dodge(target, self.player)
                 if not dodge:
@@ -567,7 +567,7 @@ class ActsCalculator():
                 elif check == "END":
                     return
                 elif check == "IMMUNITY":
-                    self.makeAction(f"{player} está imune!! Nada o afetará nesta rodada")
+                    self.makeAction(f"{target} seria o alvo mas está imune!! Nada o afetará nesta rodada")
                     continue
                 target_class = self.players_classes[target]
                 if "PROTEGIDO" in target_class.positive_effects:
@@ -587,7 +587,16 @@ class ActsCalculator():
         elif self.ability == "warrior3":
             maxHp = max(self.hpEnemies, key=self.hpEnemies.get)
             target_class = self.players_classes[maxHp]
-            
+
+            check = self.check_all(maxHp)
+            if check == "DEATH":
+                return
+            elif check == "END":
+                return
+            elif check == "IMMUNITY":
+                self.makeAction(f"{maxHp} seria o alvo mas está imune!! Nada o afetará nesta rodada")
+                return
+        
             self.makeAction(f"{maxHp} é o inimigo com mais HP, ele que levará o dano da habilidade")
             dodge = self.dodge(maxHp, self.player)
             if not dodge:
@@ -1273,7 +1282,7 @@ class ActsCalculator():
                 elif check == "END":
                     return
                 elif check == "IMMUNITY":
-                    self.makeAction(f"{player} está imune!! Nada o afetará nesta rodada")
+                    self.makeAction(f"{target} seria o alvo mas está imune!! Nada o afetará nesta rodada")
                     continue
                 target_class = self.players_classes[target]
                 self.makeAction(f"O alvo é {target}")
@@ -1311,7 +1320,7 @@ class ActsCalculator():
                 elif check == "END":
                     return
                 elif check == "IMMUNITY":
-                    self.makeAction(f"{player} está imune!! Nada o afetará nesta rodada")
+                    self.makeAction(f"{target} seria o alvo mas está imune!! Nada o afetará nesta rodada")
                     continue
                 self.player_class.gold -= 30
                 self.makeAction(f"{self.player} dará roll 2 vezes")

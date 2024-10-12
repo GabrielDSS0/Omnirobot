@@ -16,10 +16,10 @@ class Warrior(ClassDefault):
     def __init__(self):
         super().__init__()
         self.name = "Warrior"
-        self.hp = 1
+        self.hp = 70
         self.atk = 70
         self.cr = 20
-        self.dr = 0
+        self.dr = 20
         self.default_abilities = ["batk", "warrior1", "warrior2", "warrior3"]
 
 class Mage(ClassDefault):

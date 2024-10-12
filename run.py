@@ -34,14 +34,14 @@ def init_db():
 
 async def run():
     init_db()
+    
+    pkl_file = "saveobjects.pkl"
     async for websocket in websockets.connect(uri):
         try:
-            if os.path.isfile("saveobjects.pkl"):
-                with open('saveobjects.pkl', 'rb') as f:
-                    if f.readlines():
-                        src.vars.Varlist = dill.load(f)
-                open("saveobjects.pkl", "w")
-
+            with open(pkl_file, 'rb') as f:
+                if os.stat(pkl_file).st_size != 0:
+                    src.vars.Varlist = dill.load(f)
+                open(pkl_file, "w").close()
             Varlist.websocket = websocket
             login: User = User()
             await login.login()
@@ -55,7 +55,7 @@ async def run():
             Varlist.sql_commands.insert_exception(e, now_format)
 
         finally:
-            with open('saveobjects.pkl', 'wb') as f:
+            with open(pkl_file, 'wb') as f:
                 dill.dump(Varlist, f)
 
 if __name__ == "__main__":
