@@ -24,6 +24,7 @@ class RedirectingFunction():
         if self.senderID in self.questions:
             if len(self.questions[self.senderID]) == 1:
                 self.room = list(self.questions[self.senderID])[0]
+
         command_permission = commands_mq[self.command]['perm']
         command_params_default = commands_mq[self.command]['params']
         need_room = commands_mq[self.command]['need_room']
@@ -31,9 +32,8 @@ class RedirectingFunction():
         if need_room and self.msgType == "room" and len(self.commandParams) < (len(command_params_default) - 1):
             return respondRoom(f"Uso: {prefix}{self.command} **{', '.join(command_params_default[1:])}**", self.room)
         
-        elif need_room and self.msgType != "room" and len(self.commandParams) < len(command_params_default) and self.senderID in self.questions:
-            if len(self.questions[self.senderID]) > 1:
-                return respond(self.msgType, f"Uso: {prefix}{self.command} **{', '.join(command_params_default)}**", self.senderID, self.room)
+        elif need_room and self.msgType != "room" and len(self.commandParams) < len(command_params_default) and self.senderID not in self.questions:
+            return respond(self.msgType, f"Uso: {prefix}{self.command} **{', '.join(command_params_default)}**", self.senderID, self.room)
 
         if command_permission == "host" or command_permission == "adm" or (command_permission == "general" and self.msgType == "room"):
             permission = await self.verify_perm(self.room, self.senderID)
@@ -47,7 +47,13 @@ class RedirectingFunction():
             return respondPM(self.senderID, "Este comando deve ser executado somente por PM.")
 
         if command_permission == 'host':
-            if self.senderID not in self.questions or not (self.room in self.questions[self.senderID]):
+            if self.senderID not in self.questions and self.command != "makequestion":
+                return respondPM(self.senderID, "Não há uma questão ativa na sala atualmente.")
+        
+            if self.senderID in self.questions and self.command == "makequestion":
+                return respondPM(self.senderID, "Você já está com uma questão aberta. Caso queira cancelar, digite @cancelquestion.")
+
+            if self.senderID not in self.questions or not (self.room in self.questions[self.senderID]) and self.command == "makequestion":
                 question: GameCommands = GameCommands(self.senderID)
                 Varlist.host = self.senderID
                 if not (self.senderID in self.questions):
@@ -65,7 +71,7 @@ class RedirectingFunction():
         elif commands_mq[self.command]['perm'] == 'user':
             hoster = name_to_id(self.commandParams[1])
             if hoster in self.questions:
-                inst = self.questions[self.senderID][self.room]
+                inst = self.questions[hoster][self.room]
                 inst.redirect_command(inst, self.command)
 
         elif commands_mq[self.command]['perm'] == 'adm':

@@ -7,23 +7,26 @@ commands_leaderboard = {
 
 commands_dp = {
             'startdp':  {'params': [""], 'perm': 'host', 'type': 'room', 'need_room': True},
-            'defplayers':  {'params': ["jogadores"], 'perm': 'host', 'type': 'both', 'need_room': True},
-            'defclass':  {'params': ["sala", "jogador", "classe"], 'perm': 'host', 'type': 'pm', 'need_room': True},
-            'act':  {'params': ["sala", "jogador", "ação"], 'perm': 'host', 'type': 'pm', 'need_room': True},
-            'actsconfirm':  {'params': ["sala"], 'perm': 'host', 'type': 'both', 'need_room': True},
-            'trapper': {'params': ["sala", "jogador", "alvo"], 'perm': 'host', 'type': 'both', 'need_room': True},
-            'spirit': {'params': ["sala", "jogador", "possuído"], 'perm': 'host', 'type': 'both', 'need_room': True},
-            'makehost': {'params': ["sala", "novo host"], 'perm': 'host', 'type': 'both', 'need_room': True},
+            'defplayers':  {'params': ["jogadores"], 'perm': 'host', 'type': 'both', 'need_room': False},
+            'defclass':  {'params': ["jogador", "classe"], 'perm': 'host', 'type': 'pm', 'need_room': False},
+            'confirmclass':  {'params': [], 'perm': 'host', 'type': 'pm', 'need_room': False},
+            'act':  {'params': ["jogador", "ação"], 'perm': 'host', 'type': 'pm', 'need_room': False},
+            'cancelact':  {'params': [], 'perm': 'host', 'type': 'pm', 'need_room': False},
+            'actsconfirm':  {'params': [], 'perm': 'host', 'type': 'both', 'need_room': False},
+            'trapper': {'params': ["jogador", "alvo"], 'perm': 'host', 'type': 'both', 'need_room': False},
+            'spirit': {'params': ["jogador", "possuído"], 'perm': 'host', 'type': 'both', 'need_room': False},
+            'makehost': {'params': ["novo host"], 'perm': 'host', 'type': 'both', 'need_room': False},
+            'finishdp':  {'params': [""], 'perm': 'host', 'type': 'room', 'need_room': True},
 }
 
 commands_mq = {
             'makequestion': {'params': ["sala", "pergunta"], 'perm': 'host', 'type': 'pm', 'need_room': True},
-            'cancelquestion': {'params': ["sala"], 'perm': 'host', 'type': 'pm', 'need_room': True},
-            'addalternative': {'params': ["sala", "alternativa"], 'perm': 'host', 'type': 'pm', 'need_room': True},
-            'defineanswer': {'params': ["sala", "alternativa correta"], 'perm': 'host', 'type': 'pm', 'need_room': True},
-            'showquestion': {'params': ["sala"], 'perm': 'host', 'type': 'pm', 'need_room': True},
-            'sendquestion': {'params': ["sala"], 'perm': 'host', 'type': 'both', 'need_room': True},
-            'respondquestion': {'params': ["sala", "usuário-host", "alternativa"], 'perm': 'user', 'type': 'pm', 'need_room': True},
+            'cancelquestion': {'params': [], 'perm': 'host', 'type': 'pm', 'need_room': False},
+            'addalternative': {'params': ["alternativa"], 'perm': 'host', 'type': 'pm', 'need_room': False},
+            'defineanswer': {'params': ["alternativa correta"], 'perm': 'host', 'type': 'pm', 'need_room': False},
+            'showquestion': {'params': [], 'perm': 'host', 'type': 'pm', 'need_room': False},
+            'sendquestion': {'params': [], 'perm': 'host', 'type': 'both', 'need_room': False},
+            'respondquestion': {'params': ["usuário-host", "alternativa"], 'perm': 'user', 'type': 'pm', 'need_room': False},
             'definetimer': {'params': ["sala", "tempo"], 'perm': 'adm', 'type': 'both', 'need_room': True},
         }
 

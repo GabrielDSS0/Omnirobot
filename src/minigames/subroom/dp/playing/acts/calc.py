@@ -441,13 +441,13 @@ class ActsCalculator():
         trapper3_value -= damage
         if trapper3_value <= 0:
             if trapper3:
-                self.makeAction(f"A armadilha defensiva do Trapper quebrou, o dano restante incidirá no escudo de {target}!!")
+                self.makeAction(f"A armadilha defensiva do Trapper quebrou, o dano restante ({damage + trapper3_value}) incidirá no escudo de {target}!!")
             if shield_value > 0 and not critical:
                 shield_value -= damage
                 if shield_value < 0:
                     target_hp += shield_value
                     shield_value = 0
-                    self.makeAction(f"O escudo de {target} quebrou, o dano restante ({damage - shield_value}) incidirá no HP do próprio!!")
+                    self.makeAction(f"O escudo de {target} quebrou, o dano restante ({damage + shield_value}) incidirá no HP do próprio!!")
             elif shield_value > 0 and critical:
                 self.makeAction(f"Pelo dano ser crítico, o dano que iria ser no escudo irá ser no HP!!")
                 target_hp -= damage
@@ -1334,7 +1334,7 @@ class ActsCalculator():
             player = self.player_class.other_effects["POSSUINDO"]
             player_class = self.players_classes[player]
             maxHp = max(self.hpEnemies, key=self.hpEnemies.get)
-            act = player_class.default_abilities[0]
+            act = player_class.default_abilities[1]
             targets = [maxHp]
             act: ActsCalculator = ActsCalculator(self.idGame, player, act, targets, self.players_classes, self.team1_classes, self.team2_classes, self.players_dead, self.team1_dead, self.team2_dead, self.round)
             self.playersClasses, self.team1_classes, self.team2_classes, self.playersDead, self.team1_dead, self.team2_dead, self.end_game = act.controller()
@@ -1355,10 +1355,11 @@ class ActsCalculator():
                 possessed_class = self.players_classes[possessed]
                 possessed_class.hp += 5
                 possessed_class.other_effects.pop("POSSUIDO")
+                self.makeAction(f"{self.player} saiu de {possessed} e o curou com 5 de hp!!")
             self.player_class.other_effects["POSSUINDO"] = new_possessed
             target_class = self.players_classes[new_possessed]
             target_class.other_effects["POSSUIDO"] = self.player
-            self.makeAction(f"{self.player} curou em 5 de HP {possessed} e agora possuirá {new_possessed}!!")
+            self.makeAction(f"{self.player} agora possuirá {new_possessed}!!")
             if "ESCUDO" in target_class.positive_effects:
                 shield = target_class.positive_effects["ESCUDO"]["VALOR"]
                 shield += 10

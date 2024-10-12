@@ -150,7 +150,7 @@ class PostRound():
                     player_class.other_effects.pop("TRAPPER2")
                 else:
                     player_class.other_effects["TRAPPER2"]["ROUNDS"] = rounds
-            
+
             if "ARCHER2" in player_class.other_effects:
                 rounds = player_class.other_effects["ARCHER2"]["ROUNDS"]
                 rounds -= 1
@@ -211,14 +211,12 @@ class PostRound():
                 ability_cooldown = player_class.cooldowns[ability]
                 if ability_cooldown == 0:
                     player_class.cooldowns.pop(ability)
-                
 
     async def writing_actions(self):
-        actions = self.sql_commands.select_dp_actions(self.idGame)
+        actions = self.sql_commands.select_dp_action(self.idGame)
         for act in actions:
             act = act[0]
-            #time_sleep = len(act) / 6.3
-            time_sleep = 1
+            time_sleep = len(act) / 6.7
             respondRoom(f"**{act}**", self.room)
             await asyncio.sleep(time_sleep)
         
@@ -322,6 +320,4 @@ class PostRound():
 
         respondRoom(f"!code {final_code}", self.room)
 
-        self.sql_commands.delete_dp_actions(self.idGame)
-
-        
+        self.sql_commands.delete_dp_action(self.idGame)

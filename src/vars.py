@@ -6,15 +6,18 @@ class Varlist:
    db: connection = None
    cursor: cs = None
    sql_commands = None
+   
    msgSplited: list =  []
    commandParams: list = []
-   questions: dict = {}
-   hosts_groupchats: dict = {}
-   dpGames: dict = {}
    command: str = ""
    sender: str = ""
    senderID: str = ""
    content: str = ""
    msgType: str = ""
+   
    room: str = ""
    groupchat_name_complete: str = ""
+
+   questions: dict = {}
+   hosts_groupchats: dict = {}
+   dpGames: dict = {}

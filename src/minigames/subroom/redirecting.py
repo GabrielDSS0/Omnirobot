@@ -8,8 +8,9 @@ def joinRoom():
     room = invite[1].strip()
     host = room.split("-")[1]
     if host in Varlist.hosts_groupchats:
-        groupchats: list  = Varlist.hosts_groupchats[host] 
-        Varlist.hosts_groupchats[host] = groupchats.append(host)
+        groupchats: list = Varlist.hosts_groupchats[host]
+        groupchats.append(room)
+        Varlist.hosts_groupchats[host] = groupchats
     else:
         Varlist.hosts_groupchats[host] = [room]
 

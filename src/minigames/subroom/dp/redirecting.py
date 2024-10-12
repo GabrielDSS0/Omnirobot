@@ -19,7 +19,10 @@ class RedirectingFunction():
         self.dpGames = Varlist.dpGames
 
     async def redirect_to_function(self):
-        if self.senderID in self.hosts_groupchats:
+        if self.senderID in self.dpGames and self.msgType == "pm":
+            self.groupchat_name_complete = list(self.dpGames[self.senderID])[0]
+
+        elif self.senderID in self.hosts_groupchats:
             if len(self.hosts_groupchats[self.senderID]) == 1:
                 self.groupchat_name_complete = self.hosts_groupchats[self.senderID][0]
 
@@ -46,6 +49,13 @@ class RedirectingFunction():
             return respondPM(self.senderID, "Este comando deve ser executado somente por PM.")
 
         if command_permission == 'host':
+            if self.senderID not in self.dpGames and self.command != "startdp":
+                return respondPM(self.senderID, "Não há um jogo de Dungeons & Pokémon ativo na subsala atualmente.")
+
+            if self.senderID in self.dpGames and self.msgType == "room":
+                if self.groupchat_name_complete not in self.dpGames[self.senderID]:
+                    return respondPM(self.senderID, "Você já está hosteando um jogo de Dugenons & Pokémon em outra sala.")
+
             if (self.senderID not in self.dpGames or not (self.groupchat_name_complete in self.dpGames[self.senderID])) and self.command == "startdp":
                 dpGame: GameCommands = GameCommands(self.senderID, self.groupchat_name_complete)
                 Varlist.host = self.senderID
@@ -58,20 +68,15 @@ class RedirectingFunction():
                         self.groupchat_name_complete: dpGame
                     })
 
-            if self.senderID not in self.dpGames and self.command != "startdp":
-                return respondPM(self.senderID, "Não há um jogo de Dungeons & Pokémon ativo na subsala atualmente.")
-
             inst = self.dpGames[self.senderID][self.groupchat_name_complete]
             await inst.redirect_command(inst, self.command)
 
     async def verify_perm(self, senderID):
-        if senderID in self.dpGames:
-            rooms = self.dpGames[senderID]
-        elif senderID in self.hosts_groupchats:
+        if senderID in self.hosts_groupchats:
             rooms = self.hosts_groupchats[senderID]
         else:
             return "INVALID"
-
+        
         if self.groupchat_name_complete in rooms:
             call_command(self.websocket.send(f"|/query roominfo {self.groupchat_name_complete}"))
             response = str(await self.websocket.recv()).split("|")

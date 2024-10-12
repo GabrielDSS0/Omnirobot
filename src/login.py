@@ -45,8 +45,6 @@ class User():
                         call_command(self.websocket.send(f"|/join {room}"))
                         Commands_SQL().insert_room(room)
 
-                    call_command(self.websocket.send(f"|/status Digite @help para visualizar os comandos do bot."))
-
                     self.loginDone = True
 
             if self.loginDone:
