@@ -109,7 +109,7 @@ class Misc_Commands():
             self.sql_commands.insert_leaderboard(user, room, newPoints)
 
         if not fromRespond:
-            respond(self.msgType, "Pontos adicionados!", self.senderID, self.room)
+            respond(self.msgType, "Pontos adicionados! 12345", self.senderID, self.room)
 
     def removepoints(self, remPoints=1):
         if self.msgType:
