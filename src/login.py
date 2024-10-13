@@ -2,7 +2,7 @@ import json
 import requests
 import logging
 
-from src.commands_list import commands_dp, commands_mq, commands_misc
+from src.commands_list import commands_adm, commands_dp, commands_mq, commands_misc
 from src.vars import Varlist
 from src.control_pm_and_room import Control
 from src.server_messages import Server_Messages
@@ -10,6 +10,7 @@ from src.sending import call_command
 from src.database_sql_commands import Commands_SQL
 from config import username, password, rooms, avatar
 
+from src.admin_commands.redirecting import RedirectingFunction as adm_redirect
 from src.minigames.room.megaquiz.redirecting import RedirectingFunction as mq_redirect
 from src.minigames.subroom.dp.redirecting import RedirectingFunction as dp_redirect
 from src.minigames.subroom.redirecting import joinRoom
@@ -68,6 +69,8 @@ class User():
                 await mq_redirect().redirect_to_function()
             elif command in commands_dp:
                 await dp_redirect().redirect_to_function()
+            elif command in commands_adm:
+                await adm_redirect().redirect_to_function()
 
         elif cmd_or_invite == "INVITE":
             joinRoom()

@@ -2,7 +2,7 @@ import re
 
 from config import prefix
 from src.vars import Varlist
-from src.commands_list import aliases, allCommands, allCommands_keys
+from src.commands_list import aliases, allCommands_keys
 
 from psclient import toID
 

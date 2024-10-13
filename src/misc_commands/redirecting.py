@@ -17,8 +17,6 @@ class RedirectingFunction():
         self.command = Varlist.command
         self.commandParams = Varlist.commandParams
 
-        self.questions = Varlist.questions
-
     async def redirect_to_function(self):
         command_permission = commands_misc[self.command]['perm']
         command_params_default = commands_misc[self.command]['params']
