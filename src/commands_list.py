@@ -1,4 +1,5 @@
 commands_misc = {
+            'commands': {'params': [], 'perm': 'user', 'type': 'pm', 'need_room': False},
             'addpoints': {'params': ["sala", "usuário", "pontos"], 'perm': 'adm', 'type': 'both', 'need_room': True},
             'removepoints': {'params': ["sala", "usuário", "pontos"], 'perm': 'adm', 'type': 'both', 'need_room': True},
             'clearpoints': {'params': ["sala"], 'perm': 'adm', 'type': 'both', 'need_room': True},

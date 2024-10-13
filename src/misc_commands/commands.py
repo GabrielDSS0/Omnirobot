@@ -1,12 +1,18 @@
 import threading
+import html
+import inspect
+import json
 
+from bs4 import BeautifulSoup
 from psclient import toID
 
+from config import username, commands_file
 from src.sending import *
 from src.vars import Varlist
 
 class Misc_Commands():
     def __init__(self):
+        self.websocket = Varlist.websocket
         self.msgType = Varlist.msgType
         self.room = Varlist.room
         self.sender = Varlist.sender
@@ -14,14 +20,51 @@ class Misc_Commands():
 
         self.sql_commands = Varlist.sql_commands
 
-    def redirect_command(self, inst, name_func: str):
+    async def redirect_command(self, inst, name_func: str):
         self.sender = Varlist.sender
         self.senderID = Varlist.senderID
         self.command = Varlist.command
         self.commandParams = Varlist.commandParams
         func = getattr(inst, name_func)
-        func()
+        isAsync = inspect.iscoroutinefunction(func)
+        if not isAsync:
+            func()
+        else:
+            await func()
+
+    async def query(self, type, params):
+        call_command(self.websocket.send(f"|/query {type} {params}"))
+        response = str(await self.websocket.recv()).split("|")
+        if len(response) > 2:
+            while response[1] != "queryresponse" and response[2] != type:
+                response = str(await self.websocket.recv()).split("|")
+
+            return response
     
+    async def commands(self):
+        response_user_rooms = await self.query("userdetails", f"{self.senderID}")
+
+        user_rooms = set((json.loads(response_user_rooms[3])['rooms'].keys()))
+        
+        response_bot_rooms = await self.query("userdetails", f"{username}")
+
+        bot_rooms = set((json.loads(response_bot_rooms[3])['rooms'].keys()))
+
+        for room in bot_rooms:
+            bot_room = toID(room)
+            for user_room in user_rooms:
+                user_room = toID(user_room)
+                if user_room == bot_room:
+                    with open(commands_file, "r", encoding="utf-8") as html_file:
+                        html_content = html_file.read()
+                        converted = BeautifulSoup(html_content, "html.parser")
+                        html_done = html.unescape(str(converted).replace("\n", ""))
+
+                        call_command(self.websocket.send(f"{bot_room}|/pmuhtml {self.senderID},htmlcommands,{html_done}"))
+                        return
+        
+        respondPM(self.sender, "Você não está em uma sala em comum com o bot.")
+
     def addpoints(self, newPoints=1, fromRespond=False):
         if self.msgType:
             points_receiver = self.commandParams[0] if self.msgType == "room" else self.commandParams[1]

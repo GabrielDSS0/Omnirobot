@@ -196,15 +196,6 @@ class PostRound():
                 else:
                     player_class.other_effects["NINJA3"]["ROUNDS"] = rounds
             
-            if "BERSERKER2" in player_class.other_effects:
-                rounds = player_class.other_effects["BERSERKER2"]["ROUNDS"]
-                rounds -= 1
-                if rounds == 0:
-                    player_class.other_effects.pop("BERSERKER2")
-                    player_class.positive_effects["ROUBOVIDA"] = {"VALOR": 50, "ROUNDS": 1}
-                else:
-                    player_class.other_effects["BERSERKER2"]["ROUNDS"] = rounds
-            
             if "ENVENENADO" in player_class.negative_effects:
                 self.makeAction(f"{player} está envenenado, pode tomar de 5 a 9 de dano")
                 roll = self.rollPlus(5, 4)

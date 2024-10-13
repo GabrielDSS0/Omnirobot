@@ -47,7 +47,9 @@ class User():
                         Commands_SQL().insert_room(room)
 
                     self.loginDone = True
-                    
+
+                    call_command(self.websocket.send(f"|/status Para saber os comandos, digite @commands em minha PM."))
+
                     self.reconnecting()
 
             if self.loginDone:

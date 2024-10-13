@@ -40,7 +40,7 @@ class RedirectingFunction():
 
 
         inst = Misc_Commands()
-        inst.redirect_command(inst, self.command)
+        await inst.redirect_command(inst, self.command)
 
     async def verify_perm(self, room, senderID):
         if senderID in Varlist.hosts_groupchats:

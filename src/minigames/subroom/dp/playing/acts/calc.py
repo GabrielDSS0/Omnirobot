@@ -267,7 +267,7 @@ class ActsCalculator():
     def bard_passive(self, team, player_target):
         for player in team:
             player_class = team[player]
-            if player_class == "Bard":
+            if player_class.name == "Bard":
                 player_target_class = team[player_target]
                 shield = "ESCUDO" in player_target_class.positive_effects
                 if shield:
@@ -419,6 +419,15 @@ class ActsCalculator():
                 for player in playerTeam:
                     player_class = playerTeam[player]
                     player_class.other_effects.pop("TRAPPER3")
+
+            if "BERSERKER2" in player_class.other_effects:
+                rounds = player_class.other_effects["BERSERKER2"]["ROUNDS"]
+                rounds -= 1
+                if rounds == 0:
+                    player_class.other_effects.pop("BERSERKER2")
+                    player_class.positive_effects["ROUBOVIDA"] = {"VALOR": 50, "ROUNDS": 1}
+                else:
+                    player_class.other_effects["BERSERKER2"]["ROUNDS"] = rounds
 
             if "BERSERKER3" in player_class.other_effects:
                 self.player_class.hp += 15
@@ -1149,8 +1158,7 @@ class ActsCalculator():
                 self.player_class.negative_effects.clear()
 
         elif self.ability == "bard3":
-            enemies = len(self.targets)
-            for target in self.targets:
+            for e, target in enumerate(self.targets, start=1):
                 check = self.check_all(target)
                 if check == "DEATH":
                     self.makeAction(f"{target} seria alvo mas está abatido!!")
@@ -1160,9 +1168,9 @@ class ActsCalculator():
                 elif check == "IMMUNITY":
                     self.makeAction(f"{target} seria o alvo mas está imune!! Nada o afetará nesta rodada")
                     continue
-                self.makeAction(f"{target} é o alvo do dano da habilidade")
                 target_class = self.players_classes[target]
-                if self.targets[0] == target:
+                if e == 1:
+                    self.makeAction(f"{target} é o alvo do dano da habilidade")
                     dodge = self.dodge(target, self.player)
                     if not dodge:
                         critical_rate = self.player_class.cr
@@ -1174,16 +1182,15 @@ class ActsCalculator():
                         self.make_default_damage(target, damage, self.player, critical)
                         if self.check_death(target):
                             continue
-                        target_class.positive_effects.clear()
 
-                if enemies > 1 and self.targets[1] == target:
+                if e == 2:
                     if "ATORDOADO" in target_class.negative_effects:
                         self.makeAction(f"{target} iria ser atordoado pela habilidade, mas já está")
                     else:
                         self.makeAction(f"{target} foi atordoado pela habilidade!!")
                         target_class.negative_effects["ATORDOADO"] = {}
 
-                if enemies > 2 and self.targets[2] == target:
+                if e == 3:
                     if "ENFRAQUECIDO" in target_class.negative_effects:
                         effect_value = target_class.negative_effects["ENFRAQUECIDO"]["VALOR"]
                         effect_value += 50

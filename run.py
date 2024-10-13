@@ -34,7 +34,7 @@ def init_db():
 
 async def run():
     init_db()
-    
+
     pkl_file = "saveobjects.pkl"
     async for websocket in websockets.connect(uri):
         try:

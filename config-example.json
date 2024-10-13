@@ -5,6 +5,6 @@
     "avatar": "1",
     "rooms": [],
     "prefix": "@",
-    "owner": ""
-
+    "owner": "",
+    "commands_html": "commands.html"
 }
