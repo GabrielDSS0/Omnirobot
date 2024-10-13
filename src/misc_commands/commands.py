@@ -73,7 +73,7 @@ class Misc_Commands():
             try:
                 newPoints = float(newPoints)
             except:
-                return respond(self.msgType, "A pontuação digitada não é um número.", self.senderID, self.room)
+                return respond(self.msgType, "A pontuação digitada não é um número. receba", self.senderID, self.room)
         else:
             points_receiver = self.sender
             username_id = self.senderID
