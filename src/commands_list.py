@@ -33,7 +33,8 @@ commands_mq = {
         }
 
 commands_adm = {
-    'kill': {'params': []}
+    'kill': {'params': []},
+    'gitpull': {'params': []}
 }
 
 allCommands = commands_adm |  commands_mq | commands_dp | commands_misc
