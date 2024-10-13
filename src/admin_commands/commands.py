@@ -19,5 +19,5 @@ class Admin_Commands():
     def gitpull(self):
         command = ["git", "pull"]
         output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
-        results: str = (output.stdout + output.stderr).decode('utf-8')
+        results = (output.stdout + output.stderr).decode('utf-8')
         respondPM(self.senderID, f"!code {results}")
