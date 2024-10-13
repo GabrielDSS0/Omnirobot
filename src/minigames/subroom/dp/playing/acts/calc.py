@@ -567,7 +567,7 @@ class ActsCalculator():
                     self.makeAction(f"{target} seria o alvo mas está imune!! Nada o afetará nesta rodada")
                     continue
 
-                self.makeAction(f"{player} vai ser atacado!!")
+                self.makeAction(f"{target} vai ser atacado!!")
                 target_class = self.players_classes[target]
                 dodge = self.dodge(target, self.player)
                 if not dodge:
