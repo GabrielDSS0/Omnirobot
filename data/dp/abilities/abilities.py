@@ -8,7 +8,7 @@ class MoveDefault:
 
 class Warrior_01(MoveDefault):
     type_name = "Habilidade de Ataque"
-    cooldown = 0
+    cooldown = 1
     damages = {
         "DAMAGE": 10,
         "CRITICAL": 10 * 1.5
