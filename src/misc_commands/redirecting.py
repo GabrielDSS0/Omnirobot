@@ -2,9 +2,9 @@ import json
 
 from config import *
 from src.vars import Varlist
-from src.commands_list import commands_leaderboard
+from src.commands_list import commands_misc
 
-from src.leaderboard.commands import *
+from src.misc_commands.commands import *
 
 class RedirectingFunction():
     def __init__(self) -> None:
@@ -20,9 +20,9 @@ class RedirectingFunction():
         self.questions = Varlist.questions
 
     async def redirect_to_function(self):
-        command_permission = commands_leaderboard[self.command]['perm']
-        command_params_default = commands_leaderboard[self.command]['params']
-        need_room = commands_leaderboard[self.command]['need_room']
+        command_permission = commands_misc[self.command]['perm']
+        command_params_default = commands_misc[self.command]['params']
+        need_room = commands_misc[self.command]['need_room']
 
         if need_room and self.msgType == "room" and len(self.commandParams) < (len(command_params_default) - 1):
             return respondRoom(f"Uso: {prefix}{self.command} **{', '.join(command_params_default[1:])}**", self.room)
@@ -39,10 +39,13 @@ class RedirectingFunction():
                 return respondPM(self.senderID, "O bot não está nessa room.")
 
 
-        inst = Leaderboard_Commands()
+        inst = Misc_Commands()
         inst.redirect_command(inst, self.command)
 
     async def verify_perm(self, room, senderID):
+        if senderID in Varlist.hosts_groupchats:
+            rooms.extend(Varlist.hosts_groupchats[senderID])
+    
         if room in rooms:
             call_command(self.websocket.send(f"|/query roominfo {room}"))
             response = str(await self.websocket.recv()).split("|")

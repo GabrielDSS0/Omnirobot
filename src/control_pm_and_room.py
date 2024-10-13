@@ -62,11 +62,8 @@ class Control():
             Varlist.commandParams = self.commandParams
         else:
             return
-        
-        need_room = allCommands[command]['need_room']
-        
-        if need_room:
-            self.identify_room()
+
+        self.identify_room()
 
         return "COMMAND"
     

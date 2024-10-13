@@ -1,9 +1,11 @@
+import threading
+
 from psclient import toID
 
 from src.sending import *
 from src.vars import Varlist
 
-class Leaderboard_Commands():
+class Misc_Commands():
     def __init__(self):
         self.msgType = Varlist.msgType
         self.room = Varlist.room
@@ -146,3 +148,24 @@ class Leaderboard_Commands():
             code += "</hr></div>"
 
         respond(self.msgType, code, self.senderID, self.room)
+    
+    def timer(self):
+        time = self.commandParams[0]
+        try:
+            time = float(time)
+        except:
+            return respond(self.msgType, "O tempo inserido não é um número.", self.senderID, self.room)
+
+        unit = toID(self.commandParams[-1])
+
+        if not (unit == "min" or unit == "sec"):
+            return respond(self.msgType, "A unidade de medida deve ser ou min ou sec.", self.senderID, self.room)
+        
+        if unit == "min":
+            time *= 60
+
+        respond(self.msgType, "Timer iniciado!", self.senderID, self.room)
+
+        timer_thread = threading.Timer(time, respond, args=[self.msgType, "Tempo batido!", self.senderID, self.room])
+
+        timer_thread.start()

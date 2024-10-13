@@ -1,8 +1,9 @@
-commands_leaderboard = {
+commands_misc = {
             'addpoints': {'params': ["sala", "usuário", "pontos"], 'perm': 'adm', 'type': 'both', 'need_room': True},
             'removepoints': {'params': ["sala", "usuário", "pontos"], 'perm': 'adm', 'type': 'both', 'need_room': True},
             'clearpoints': {'params': ["sala"], 'perm': 'adm', 'type': 'both', 'need_room': True},
-            'leaderboard': {'params': ["sala"], 'perm': 'adm', 'type': 'both', 'need_room': True},
+            'leaderboard': {'params': ["sala"], 'perm': 'general', 'type': 'both', 'need_room': True},
+            'timer': {'params': ["tempo", "unidade (min ou sec)"], 'perm': 'general', 'type': 'both', 'need_room': False},
         }
 
 commands_dp = {
@@ -30,9 +31,9 @@ commands_mq = {
             'definetimer': {'params': ["sala", "tempo"], 'perm': 'adm', 'type': 'both', 'need_room': True},
         }
 
-allCommands = commands_leaderboard | commands_mq | commands_dp
+allCommands = commands_misc | commands_mq | commands_dp
 
-allCommands_keys = commands_leaderboard.keys() | commands_mq.keys() | commands_dp.keys()
+allCommands_keys = commands_misc.keys() | commands_mq.keys() | commands_dp.keys()
 
 aliases = {
     "mq": "makequestion",

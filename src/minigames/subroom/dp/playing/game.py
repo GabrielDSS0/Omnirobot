@@ -12,7 +12,7 @@ from data.dp.abilities.abilities import abilities_dict
 
 from src.vars import Varlist
 from src.sending import *
-from src.leaderboard.commands import *
+from src.misc_commands.commands import *
 from src.minigames.subroom.dp.playing.acts.calc import ActsCalculator
 from src.minigames.subroom.dp.playing.acts.endround import PostRound
 
@@ -159,6 +159,12 @@ class GameCommands():
             self.round = 1
             self.verify_spirit_trapper()
 
+            code = "Classes:\n"
+            for player in self.playersClasses:
+                player_class_name = self.playersClasses[player].name
+                code += f"{player}: {player_class_name}\n"
+            respondRoom(f"!code {code}", self.room)
+
     def act(self):
         if not self.started:
             return respondPM(self.senderID, "Não há um jogo de Dungeons & Pokémon ocorrendo agora.")
@@ -287,7 +293,13 @@ class GameCommands():
                 respond(self.msgType, f"Novo host: {new_host}", self.senderID, self.groupchat_name_complete)
                 instance = self.dpGames[self.host][self.groupchat_name_complete]
                 Varlist.dpGames[new_host_id] = {self.groupchat_name_complete: instance}
-                Varlist.hosts_groupchats[new_host_id] = [self.groupchat_name_complete]
+
+                if new_host_id in Varlist.hosts_groupchats:
+                    groupchats: list = Varlist.hosts_groupchats[new_host_id]
+                    groupchats.append(room)
+                    Varlist.hosts_groupchats[new_host_id] = groupchats
+                else:
+                    Varlist.hosts_groupchats[new_host_id] = [self.groupchat_name_complete]
                 return True
         return
 

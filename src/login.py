@@ -2,9 +2,10 @@ import json
 import requests
 import logging
 
-from src.commands_list import commands_dp, commands_mq, commands_leaderboard
+from src.commands_list import commands_dp, commands_mq, commands_misc
 from src.vars import Varlist
 from src.control_pm_and_room import Control
+from src.server_messages import Server_Messages
 from src.sending import call_command
 from src.database_sql_commands import Commands_SQL
 from config import username, password, rooms, avatar
@@ -12,7 +13,7 @@ from config import username, password, rooms, avatar
 from src.minigames.room.megaquiz.redirecting import RedirectingFunction as mq_redirect
 from src.minigames.subroom.dp.redirecting import RedirectingFunction as dp_redirect
 from src.minigames.subroom.redirecting import joinRoom
-from src.leaderboard.redirecting import RedirectingFunction as lb_redirect
+from src.misc_commands.redirecting import RedirectingFunction as misc_redirect
 
 logging.basicConfig(
         format="%(asctime)s %(message)s",
@@ -46,6 +47,8 @@ class User():
                         Commands_SQL().insert_room(room)
 
                     self.loginDone = True
+                    
+                    self.reconnecting()
 
             if self.loginDone:
                 await self.afterLogin()
@@ -54,11 +57,11 @@ class User():
     async def afterLogin(self):
         self.control_pm_room = Control()
         cmd_or_invite = self.control_pm_room.determinate_pm_or_room()
-        
+
         if cmd_or_invite == "COMMAND":
             command = Varlist.command
-            if command in commands_leaderboard:
-                await lb_redirect().redirect_to_function()
+            if command in commands_misc:
+                await misc_redirect().redirect_to_function()
             elif command in commands_mq:
                 await mq_redirect().redirect_to_function()
             elif command in commands_dp:
@@ -66,3 +69,12 @@ class User():
 
         elif cmd_or_invite == "INVITE":
             joinRoom()
+        
+        else:
+            Server_Messages().check()
+    
+    def reconnecting(self):
+        if Varlist.dpGames:
+            for player in Varlist.dpGames:
+                for room in Varlist.dpGames[player]:
+                    call_command(self.websocket.send(f"|/j {room}"))

@@ -6,7 +6,7 @@ from showdown.utils import name_to_id
 from config import username, prefix
 from src.vars import Varlist
 from src.sending import *
-from src.leaderboard.commands import *
+from src.misc_commands.commands import *
 
 class GameCommands():
     def __init__(self, host):
@@ -26,7 +26,7 @@ class GameCommands():
         self.sql_commands = Varlist.sql_commands
         self.questions = Varlist.questions
 
-        self.leaderboardCommands = Leaderboard_Commands()
+        self.leaderboardCommands = Misc_Commands()
         self.leaderboardCommands.room = self.room
 
     def redirect_command(self, inst, name_func: str):
