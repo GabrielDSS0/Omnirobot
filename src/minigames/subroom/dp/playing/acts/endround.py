@@ -221,7 +221,7 @@ class PostRound():
                     continue
                 elif check == "END":
                     return
-            
+
             cooldowns = player_class.cooldowns.copy()
             for ability in cooldowns:
                 ability_cooldown = player_class.cooldowns[ability]
@@ -325,14 +325,14 @@ class PostRound():
 
         for player in self.team1_dead:
             player_class = self.team1_dead[player]
-            final_code += f"{player} | {player_class.name}\nMORTO\n\n"
+            final_code += f"{player} | {player_class.name}\n0 HP\n\n"
 
         final_code += "\nEquipe 2:\n"
         final_code = self.alive_players_final_code(self.team2_classes, final_code)
 
         for player in self.team2_dead:
             player_class = self.team2_dead[player]
-            final_code += f"{player} | {player_class.name}\nMORTO\n\n"
+            final_code += f"{player} | {player_class.name}\n0 HP\n\n"
 
         respondRoom(f"!code {final_code}", self.room)
 
