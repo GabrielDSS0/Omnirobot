@@ -1,4 +1,3 @@
-import importlib
 import sys
 import subprocess
 
@@ -25,17 +24,3 @@ class Admin_Commands():
 
         if results_git == "Already up to date.":
             return
-
-        results_git = results_git.split("\n")
-        
-        for result in results_git:
-            if result.startswith(" "):
-                pipes = result.count("|")
-                if not pipes:
-                    continue
-                result = result.split("|", 1)[0].strip()
-                result = result.replace("/", ".")
-                result = result.replace(".py", "")
-
-                module = __import__(result)
-                importlib.reload(module)

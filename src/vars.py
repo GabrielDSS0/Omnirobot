@@ -21,3 +21,5 @@ class Varlist:
    questions: dict = {}
    hosts_groupchats: dict = {}
    dpGames: dict = {}
+
+   modules_to_reload = []
