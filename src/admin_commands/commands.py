@@ -1,6 +1,8 @@
 import sys
 import subprocess
 
+import load_modules
+
 from src.vars import Varlist
 from src.sending import respondPM
 
@@ -24,3 +26,6 @@ class Admin_Commands():
 
         if results_git == "Already up to date.":
             return
+        
+    def reloadmodules(self):
+        load_modules.importmodules()
