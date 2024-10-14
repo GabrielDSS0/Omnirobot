@@ -1,5 +1,5 @@
 {
-    "uri": "ws://localhost:8000/showdown/websocket",
+    "uri": "wss://sim3.psim.us/showdown/websocket",
     "username": "",
     "password": "",
     "avatar": "1",
