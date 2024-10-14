@@ -2,8 +2,6 @@ import asyncio
 import websockets
 import psycopg2
 import traceback
-import os
-import dill
 
 from datetime import datetime
 
@@ -33,17 +31,11 @@ def init_db():
 async def run():
     init_db()
 
-    pkl_file = "saveobjects.pkl"
     async for websocket in websockets.connect(config.uri):
         try:
-            with open(pkl_file, 'rb') as f:
-                if os.stat(pkl_file).st_size != 0:
-                    vars.Varlist = dill.load(f)
-                open(pkl_file, "w").close()
             vars.Varlist.websocket = websocket
             login_client: login.User = login.User()
             await login_client.login()
-
         except websockets.exceptions.ConnectionClosed:
             continue
         except Exception:
@@ -51,10 +43,6 @@ async def run():
             now = datetime.now()
             now_format = now.strftime("%d/%m/%Y %H:%M:%S")
             vars.Varlist.sql_commands.insert_exception(e, now_format)
-
-        finally:
-            with open(pkl_file, 'wb') as f:
-                dill.dump(vars.Varlist, f)
 
 if __name__ == "__main__":
     asyncio.run(run())
