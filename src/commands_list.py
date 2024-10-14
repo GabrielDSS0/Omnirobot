@@ -35,7 +35,6 @@ commands_mq = {
 commands_adm = {
     'kill': {'params': []},
     'gitpull': {'params': []},
-    'reloadmodules': {'params': []},
 }
 
 allCommands = commands_adm |  commands_mq | commands_dp | commands_misc
