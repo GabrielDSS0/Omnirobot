@@ -11,6 +11,7 @@ class RedirectingFunction():
     def __init__(self) -> None:
         self.websocket = vars.Varlist.websocket
 
+        self.room = vars.Varlist.room
         self.groupchat_name_complete = vars.Varlist.groupchat_name_complete
         self.senderID = vars.Varlist.senderID
         self.msgType = vars.Varlist.msgType
@@ -22,6 +23,9 @@ class RedirectingFunction():
         self.dpGames = vars.Varlist.dpGames
 
     async def redirect_to_function(self):
+        if self.msgType == "room" and self.room[:9] != "groupchat":
+            return sending.respondRoom("Este comando não pode ser executado em salas públicas.", self.room)
+
         if self.senderID in self.dpGames and self.msgType == "pm":
             self.groupchat_name_complete = list(self.dpGames[self.senderID])[0]
 

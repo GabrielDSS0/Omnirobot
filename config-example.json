@@ -6,5 +6,6 @@
     "rooms": [],
     "prefix": "@",
     "owner": "",
-    "commands_html": "commands.html"
+    "commands_html": "commands.html",
+    "remote_repository": "https://github.com/GabrielDSS0/Omnirobot.git"
 }

@@ -10,6 +10,7 @@ with open('config.json') as config_file:
     prefix = config_jsondata['prefix']
     owner = config_jsondata['owner']
     commands_file = config_jsondata['commands_file']
+    remote_repository = config_jsondata['remote_repository']
 
 with open ('db.json') as db_json_file:
     db_jsondata = json.load(db_json_file)

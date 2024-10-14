@@ -3,6 +3,8 @@ import sys
 import subprocess
 import importlib
 
+import config
+
 import src.vars as vars
 import src.sending as sending
 
@@ -19,13 +21,13 @@ class Admin_Commands():
         sys.exit()
     
     def gitpull(self):
-        command = ["git", "pull"]
+        command = ["git", "pull", config.remote_repository]
         output_git = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
         results_git = (output_git.stdout + output_git.stderr).decode('utf-8').strip()
 
         sending.respondPM(self.senderID, f"!code {results_git}")
 
-        if results_git == "Already up to date.":
+        if results_git.split("\n")[0] == "Already up to date.":
             return
 
         results_git = results_git.split("\n")
