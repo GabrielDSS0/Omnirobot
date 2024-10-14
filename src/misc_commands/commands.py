@@ -119,7 +119,7 @@ class Misc_Commands():
             try:
                 remPoints = float(remPoints)
             except:
-                return sending.respond(self.msgType, "A pontuação digitada não é um número.", self.senderID, self.room)
+                return sending.respond(self.msgType, "A pontuação digitada não é válida.", self.senderID, self.room)
         else:
             username_id = self.senderID
 
