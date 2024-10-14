@@ -1,4 +1,4 @@
-from src.database_command import execute_sql_command, execute_sql_query
+import src.database_command as db_command
 
 from psclient import toID
 
@@ -261,7 +261,7 @@ class Commands_SQL():
         self.call_execute_sql_command()
 
     def call_execute_sql_command(self):
-        execute_sql_command(self.command, self.params)
+        db_command.execute_sql_command(self.command, self.params)
     
     def call_execute_sql_query(self):
-        return execute_sql_query(self.command, self.params)
+        return db_command.execute_sql_query(self.command, self.params)

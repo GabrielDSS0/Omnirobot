@@ -1,16 +1,16 @@
 import asyncio
 import random
 
-from src.vars import Varlist
-from src.sending import respondRoom
-from data.dp.abilities.abilities import abilities_dict
+import src.vars as vars
+import src.sending as sending
+import data.dp.abilities.abilities as abilities
 
 class PostRound():
     def __init__(self, idGame, room, playersClasses, team1_classes, team2_classes, players_dead, team1_dead, team2_dead) -> None:
         self.idGame = idGame
         self.room = room
-        self.sql_commands = Varlist.sql_commands
-        self.dpGames = Varlist.dpGames
+        self.sql_commands = vars.Varlist.sql_commands
+        self.dpGames = vars.Varlist.dpGames
         self.playersClasses = playersClasses
         self.team1_classes = team1_classes
         self.team2_classes = team2_classes
@@ -233,7 +233,7 @@ class PostRound():
         for act in actions:
             act = act[0]
             time_sleep = len(act) / 6.7
-            respondRoom(f"**{act}**", self.room)
+            sending.respondRoom(f"**{act}**", self.room)
             await asyncio.sleep(time_sleep)
         
         self.final_code_func()
@@ -302,7 +302,7 @@ class PostRound():
             
             format_cooldowns = []
             for ability in cooldowns:
-                ability_class = abilities_dict[ability]
+                ability_class = abilities.abilities_dict[ability]
                 ability_name = ability_class.type_name
                 rounds = cooldowns[ability]
                 format_cooldowns.append(f"{ability_name}: {rounds} rounds")
@@ -334,6 +334,6 @@ class PostRound():
             player_class = self.team2_dead[player]
             final_code += f"{player} | {player_class.name}\n0 HP\n\n"
 
-        respondRoom(f"!code {final_code}", self.room)
+        sending.respondRoom(f"!code {final_code}", self.room)
 
         self.sql_commands.delete_dp_action(self.idGame)

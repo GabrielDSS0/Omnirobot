@@ -1,51 +1,54 @@
 import json
 
-from config import *
-from src.vars import Varlist
-from src.commands_list import commands_misc
+import src.vars as vars
+import src.commands_list as cmd_list
+import config
 
-from src.misc_commands.commands import *
+import src.misc_commands.commands as src_misc
+import src.sending as sending
 
 class RedirectingFunction():
     def __init__(self) -> None:
-        self.websocket = Varlist.websocket
+        self.websocket = vars.Varlist.websocket
 
-        self.room = Varlist.room
-        self.senderID = Varlist.senderID
-        self.msgType = Varlist.msgType
+        self.room = vars.Varlist.room
+        self.senderID = vars.Varlist.senderID
+        self.msgType = vars.Varlist.msgType
 
-        self.command = Varlist.command
-        self.commandParams = Varlist.commandParams
+        self.command = vars.Varlist.command
+        self.commandParams = vars.Varlist.commandParams
 
     async def redirect_to_function(self):
-        command_permission = commands_misc[self.command]['perm']
-        command_params_default = commands_misc[self.command]['params']
-        need_room = commands_misc[self.command]['need_room']
+        command_permission = cmd_list.commands_misc[self.command]['perm']
+        command_params_default = cmd_list.commands_misc[self.command]['params']
+        need_room = cmd_list.commands_misc[self.command]['need_room']
 
         if need_room and self.msgType == "room" and len(self.commandParams) < (len(command_params_default) - 1):
-            return respondRoom(f"Uso: {prefix}{self.command} **{', '.join(command_params_default[1:])}**", self.room)
+            return sending.respondRoom(f"Uso: {config.prefix}{self.command} **{', '.join(command_params_default[1:])}**", self.room)
         
         elif need_room and self.msgType != "room" and len(self.commandParams) < len(command_params_default):
-            return respond(self.msgType, f"Uso: {prefix}{self.command} **{', '.join(command_params_default)}**", self.senderID, self.room)
+            return sending.respond(self.msgType, f"Uso: {config.prefix}{self.command} **{', '.join(command_params_default)}**", self.senderID, self.room)
 
         if command_permission == "adm" or (command_permission == "general" and self.msgType == "room"):
             permission = await self.verify_perm(self.room, self.senderID)
             if permission == "INVALID":
-                return respondPM(self.senderID, "Você não tem permissão para executar este comando.")
+                return sending.respondPM(self.senderID, "Você não tem permissão para executar este comando.")
 
             elif permission == "INVALIDROOM":
-                return respondPM(self.senderID, "O bot não está nessa room.")
+                return sending.respondPM(self.senderID, "O bot não está nessa room.")
 
 
-        inst = Misc_Commands()
+        inst = src_misc.Misc_Commands()
         await inst.redirect_command(inst, self.command)
 
     async def verify_perm(self, room, senderID):
-        if senderID in Varlist.hosts_groupchats:
-            rooms.extend(Varlist.hosts_groupchats[senderID])
+        rooms = config.rooms.copy()
+
+        if senderID in vars.Varlist.hosts_groupchats:
+            rooms.extend(vars.Varlist.hosts_groupchats[senderID])
     
         if room in rooms:
-            call_command(self.websocket.send(f"|/query roominfo {room}"))
+            sending.call_command(self.websocket.send(f"|/query roominfo {room}"))
             response = str(await self.websocket.recv()).split("|")
             if len(response) > 2:
                 while response[1] != "queryresponse" and response[2] != "roominfo":

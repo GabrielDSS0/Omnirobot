@@ -7,45 +7,42 @@ import dill
 
 from datetime import datetime
 
-
-import src.vars
-from src.vars import Varlist
-from src.database_sql_commands import Commands_SQL
-from src.login import User
-from config import uri
-from config import database, host_db, user_db, password_db, port_db, schema
+import src.vars as vars
+import src.database_sql_commands as db_commands
+import src.login as login
+import config
 
 def init_db():
-    db = psycopg2.connect(database=database,
-                        host=host_db,
-                        user=user_db,
-                        password=password_db,
-                        port=port_db,
-                        options=f"-c search_path=dbo,{schema}")
+    db = psycopg2.connect(database=config.database,
+                        host=config.host_db,
+                        user=config.user_db,
+                        password=config.password_db,
+                        port=config.port_db,
+                        options=f"-c search_path=dbo,{config.schema}")
 
     cursor = db.cursor()
 
-    commands_sql_var = Commands_SQL()
+    commands_sql_var = db_commands.Commands_SQL()
 
-    Varlist.db = db
-    Varlist.cursor = cursor
-    Varlist.sql_commands = commands_sql_var
+    vars.Varlist.db = db
+    vars.Varlist.cursor = cursor
+    vars.Varlist.sql_commands = commands_sql_var
 
-    Varlist.sql_commands.create_all_tables()
+    vars.Varlist.sql_commands.create_all_tables()
 
 async def run():
     init_db()
 
     pkl_file = "saveobjects.pkl"
-    async for websocket in websockets.connect(uri):
+    async for websocket in websockets.connect(config.uri):
         try:
             with open(pkl_file, 'rb') as f:
                 if os.stat(pkl_file).st_size != 0:
-                    src.vars.Varlist = dill.load(f)
+                    vars.Varlist = dill.load(f)
                 open(pkl_file, "w").close()
-            Varlist.websocket = websocket
-            login: User = User()
-            await login.login()
+            vars.Varlist.websocket = websocket
+            login_client: login.User = login.User()
+            await login_client.login()
 
         except websockets.exceptions.ConnectionClosed:
             continue
@@ -53,11 +50,11 @@ async def run():
             e = traceback.format_exc()
             now = datetime.now()
             now_format = now.strftime("%d/%m/%Y %H:%M:%S")
-            Varlist.sql_commands.insert_exception(e, now_format)
+            vars.Varlist.sql_commands.insert_exception(e, now_format)
 
         finally:
             with open(pkl_file, 'wb') as f:
-                dill.dump(Varlist, f)
+                dill.dump(vars.Varlist, f)
 
 if __name__ == "__main__":
     asyncio.run(run())

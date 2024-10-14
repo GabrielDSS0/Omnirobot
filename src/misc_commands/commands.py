@@ -6,25 +6,25 @@ import json
 from bs4 import BeautifulSoup
 from psclient import toID
 
-from config import username, commands_file
-from src.sending import *
-from src.vars import Varlist
+import src.vars as vars
+import src.sending as sending
+import config
 
 class Misc_Commands():
     def __init__(self):
-        self.websocket = Varlist.websocket
-        self.msgType = Varlist.msgType
-        self.room = Varlist.room
-        self.sender = Varlist.sender
-        self.senderID = Varlist.senderID
+        self.websocket = vars.Varlist.websocket
+        self.msgType = vars.Varlist.msgType
+        self.room = vars.Varlist.room
+        self.sender = vars.Varlist.sender
+        self.senderID = vars.Varlist.senderID
 
-        self.sql_commands = Varlist.sql_commands
+        self.sql_commands = vars.Varlist.sql_commands
 
     async def redirect_command(self, inst, name_func: str):
-        self.sender = Varlist.sender
-        self.senderID = Varlist.senderID
-        self.command = Varlist.command
-        self.commandParams = Varlist.commandParams
+        self.sender = vars.Varlist.sender
+        self.senderID = vars.Varlist.senderID
+        self.command = vars.Varlist.command
+        self.commandParams = vars.Varlist.commandParams
         func = getattr(inst, name_func)
         isAsync = inspect.iscoroutinefunction(func)
         if not isAsync:
@@ -33,7 +33,7 @@ class Misc_Commands():
             await func()
 
     async def query(self, type, params):
-        call_command(self.websocket.send(f"|/query {type} {params}"))
+        sending.call_command(self.websocket.send(f"|/query {type} {params}"))
         response = str(await self.websocket.recv()).split("|")
         if len(response) > 2:
             while response[1] != "queryresponse" and response[2] != type:
@@ -46,7 +46,7 @@ class Misc_Commands():
 
         user_rooms = set((json.loads(response_user_rooms[3])['rooms'].keys()))
         
-        response_bot_rooms = await self.query("userdetails", f"{username}")
+        response_bot_rooms = await self.query("userdetails", f"{config.username}")
 
         bot_rooms = set((json.loads(response_bot_rooms[3])['rooms'].keys()))
 
@@ -55,15 +55,15 @@ class Misc_Commands():
             for user_room in user_rooms:
                 user_room = toID(user_room)
                 if user_room == bot_room:
-                    with open(commands_file, "r", encoding="utf-8") as html_file:
+                    with open(config.commands_file, "r", encoding="utf-8") as html_file:
                         html_content = html_file.read()
                         converted = BeautifulSoup(html_content, "html.parser")
                         html_done = html.unescape(str(converted).replace("\n", ""))
 
-                        call_command(self.websocket.send(f"{bot_room}|/pmuhtml {self.senderID},htmlcommands,{html_done}"))
+                        sending.call_command(self.websocket.send(f"{bot_room}|/pmuhtml {self.senderID},htmlcommands,{html_done}"))
                         return
         
-        respondPM(self.sender, "Você não está em uma sala em comum com o bot.")
+        sending.respondPM(self.sender, "Você não está em uma sala em comum com o bot.")
 
     def addpoints(self, newPoints=1, fromRespond=False):
         if self.msgType:
@@ -73,7 +73,7 @@ class Misc_Commands():
             try:
                 newPoints = float(newPoints)
             except:
-                return respond(self.msgType, "A pontuação digitada não é um número.", self.senderID, self.room)
+                return sending.respond(self.msgType, "A pontuação digitada não é um número.", self.senderID, self.room)
         else:
             points_receiver = self.sender
             username_id = self.senderID
@@ -96,7 +96,7 @@ class Misc_Commands():
                     self.sql_commands.update_userpoints_leaderboard(points, user, room)
             else:
                 if newPoints <= 0:
-                    return respond(self.msgType, "Só se pode adicionar valores de pontos maiores que 0.", self.senderID, self.room)
+                    return sending.respond(self.msgType, "Só se pode adicionar valores de pontos maiores que 0.", self.senderID, self.room)
 
                 self.sql_commands.insert_leaderboard(user, room, newPoints)
         else:
@@ -104,12 +104,12 @@ class Misc_Commands():
             user = self.sql_commands.select_iduser_by_nameid(username_id)[0][0]
 
             if newPoints <= 0:
-                return respond(self.msgType, "Só se pode adicionar valores de pontos maiores que 0.", self.senderID, self.room)
+                return sending.respond(self.msgType, "Só se pode adicionar valores de pontos maiores que 0.", self.senderID, self.room)
 
             self.sql_commands.insert_leaderboard(user, room, newPoints)
 
         if not fromRespond:
-            respond(self.msgType, "Pontos adicionados! 111", self.senderID, self.room)
+            sending.respond(self.msgType, "Pontos adicionados!", self.senderID, self.room)
 
     def removepoints(self, remPoints=1):
         if self.msgType:
@@ -119,7 +119,7 @@ class Misc_Commands():
             try:
                 remPoints = float(remPoints)
             except:
-                return respond(self.msgType, "A pontuação digitada não é um número.", self.senderID, self.room)
+                return sending.respond(self.msgType, "A pontuação digitada não é um número.", self.senderID, self.room)
         else:
             username_id = self.senderID
 
@@ -140,17 +140,17 @@ class Misc_Commands():
                 else:
                     self.sql_commands.update_userpoints_leaderboard(points, user, room)
             else:
-                return respond(self.msgType, "O usuário citado não tem pontos nesta sala.", self.senderID, self.room)
+                return sending.respond(self.msgType, "O usuário citado não tem pontos nesta sala.", self.senderID, self.room)
         else:
-            return respond(self.msgType, "O usuário citado não tem pontos nesta sala.", self.senderID, self.room)
+            return sending.respond(self.msgType, "O usuário citado não tem pontos nesta sala.", self.senderID, self.room)
 
-        respond(self.msgType, "Pontos removidos!", self.senderID, self.room)
+        sending.respond(self.msgType, "Pontos removidos!", self.senderID, self.room)
 
     def clearpoints(self):
         idRoom_fetch = self.sql_commands.select_idroom_by_nameid(self.room)
         room = idRoom_fetch[0][0]
         self.sql_commands.clear_leaderboard(room)
-        respond(self.msgType, "Pontos da sala limpos!", self.senderID, self.room)
+        sending.respond(self.msgType, "Pontos da sala limpos!", self.senderID, self.room)
     
     def leaderboard(self, inQuestion=False):
         idRoom = self.sql_commands.select_idroom_by_nameid(self.room)[0][0]
@@ -190,25 +190,25 @@ class Misc_Commands():
                     code += ','
             code += "</hr></div>"
 
-        respond(self.msgType, code, self.senderID, self.room)
+        sending.respond(self.msgType, code, self.senderID, self.room)
     
     def timer(self):
         time = self.commandParams[0]
         try:
             time = float(time)
         except:
-            return respond(self.msgType, "O tempo inserido não é um número.", self.senderID, self.room)
+            return sending.respond(self.msgType, "O tempo inserido não é um número.", self.senderID, self.room)
 
         unit = toID(self.commandParams[-1])
 
         if not (unit == "min" or unit == "sec"):
-            return respond(self.msgType, "A unidade de medida deve ser ou min ou sec.", self.senderID, self.room)
+            return sending.respond(self.msgType, "A unidade de medida deve ser ou min ou sec.", self.senderID, self.room)
         
         if unit == "min":
             time *= 60
 
-        respond(self.msgType, "Timer iniciado!", self.senderID, self.room)
+        sending.respond(self.msgType, "Timer iniciado!", self.senderID, self.room)
 
-        timer_thread = threading.Timer(time, respond, args=[self.msgType, "Tempo batido!", self.senderID, self.room])
+        timer_thread = threading.Timer(time, sending.respond, args=[self.msgType, "Tempo batido!", self.senderID, self.room])
 
         timer_thread.start()

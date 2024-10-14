@@ -1,22 +1,25 @@
-from config import *
-from src.vars import Varlist
-from src.commands_list import commands_dp
+import json
 
-from src.minigames.subroom.dp.playing.game import *
+import src.vars as vars
+import src.commands_list as cmd_list
+import src.sending as sending
+import config
+
+import src.minigames.subroom.dp.playing.game as dp_game
 
 class RedirectingFunction():
     def __init__(self) -> None:
-        self.websocket = Varlist.websocket
+        self.websocket = vars.Varlist.websocket
 
-        self.groupchat_name_complete = Varlist.groupchat_name_complete
-        self.senderID = Varlist.senderID
-        self.msgType = Varlist.msgType
+        self.groupchat_name_complete = vars.Varlist.groupchat_name_complete
+        self.senderID = vars.Varlist.senderID
+        self.msgType = vars.Varlist.msgType
 
-        self.command = Varlist.command
-        self.commandParams = Varlist.commandParams
+        self.command = vars.Varlist.command
+        self.commandParams = vars.Varlist.commandParams
 
-        self.hosts_groupchats = Varlist.hosts_groupchats
-        self.dpGames = Varlist.dpGames
+        self.hosts_groupchats = vars.Varlist.hosts_groupchats
+        self.dpGames = vars.Varlist.dpGames
 
     async def redirect_to_function(self):
         if self.senderID in self.dpGames and self.msgType == "pm":
@@ -26,39 +29,39 @@ class RedirectingFunction():
             if len(self.hosts_groupchats[self.senderID]) == 1:
                 self.groupchat_name_complete = self.hosts_groupchats[self.senderID][0]
 
-        command_permission = commands_dp[self.command]['perm']
-        command_params_default = commands_dp[self.command]['params']
-        need_room = commands_dp[self.command]['need_room']
+        command_permission = cmd_list.commands_dp[self.command]['perm']
+        command_params_default = cmd_list.commands_dp[self.command]['params']
+        need_room = cmd_list.commands_dp[self.command]['need_room']
 
         if need_room and self.msgType == "room" and len(self.commandParams) < (len(command_params_default) - 1):
-            return respondRoom(f"Uso: {prefix}{self.command} **{', '.join(command_params_default[1:])}**", self.groupchat_name_complete)
+            return sending.respondRoom(f"Uso: {config.prefix}{self.command} **{', '.join(command_params_default[1:])}**", self.groupchat_name_complete)
 
         elif need_room and self.msgType != "room" and len(self.commandParams) < len(command_params_default) and self.senderID in self.hosts_groupchats:
             if len(self.hosts_groupchats[self.senderID]) > 1:
-                return respond(self.msgType, f"Uso: {prefix}{self.command} **{', '.join(command_params_default)}**", self.senderID, self.groupchat_name_complete)
+                return sending.respond(self.msgType, f"Uso: {config.prefix}{self.command} **{', '.join(command_params_default)}**", self.senderID, self.groupchat_name_complete)
 
         if command_permission == "host" or command_permission == "adm" or (command_permission == "general" and self.msgType == "room"):
             permission = await self.verify_perm(self.senderID)
             if permission == "INVALID":
-                return respondPM(self.senderID, "Você não tem permissão para executar este comando.")
+                return sending.respondPM(self.senderID, "Você não tem permissão para executar este comando.")
 
             elif permission == "INVALIDROOM":
-                return respondPM(self.senderID, "O bot não está nessa room.")
+                return sending.respondPM(self.senderID, "O bot não está nessa room.")
 
-        if commands_dp[self.command]['type'] == 'pm' and self.msgType == 'room':
-            return respondPM(self.senderID, "Este comando deve ser executado somente por PM.")
+        if cmd_list.commands_dp[self.command]['type'] == 'pm' and self.msgType == 'room':
+            return sending.respondPM(self.senderID, "Este comando deve ser executado somente por PM.")
 
         if command_permission == 'host':
             if self.senderID not in self.dpGames and self.command != "startdp":
-                return respondPM(self.senderID, "Não há um jogo de Dungeons & Pokémon ativo na subsala atualmente.")
+                return sending.respondPM(self.senderID, "Não há um jogo de Dungeons & Pokémon ativo na subsala atualmente.")
 
             if self.senderID in self.dpGames and self.msgType == "room":
                 if self.groupchat_name_complete not in self.dpGames[self.senderID]:
-                    return respondPM(self.senderID, "Você já está hosteando um jogo de Dugenons & Pokémon em outra sala.")
+                    return sending.respondPM(self.senderID, "Você já está hosteando um jogo de Dugenons & Pokémon em outra sala.")
 
             if (self.senderID not in self.dpGames or not (self.groupchat_name_complete in self.dpGames[self.senderID])) and self.command == "startdp":
-                dpGame: GameCommands = GameCommands(self.senderID, self.groupchat_name_complete)
-                Varlist.host = self.senderID
+                dpGame: dp_game.GameCommands = dp_game.GameCommands(self.senderID, self.groupchat_name_complete)
+                vars.Varlist.host = self.senderID
                 if not (self.senderID in self.dpGames):
                     self.dpGames[self.senderID] =  {
                         self.groupchat_name_complete: dpGame
@@ -78,7 +81,7 @@ class RedirectingFunction():
             return "INVALID"
         
         if self.groupchat_name_complete in rooms:
-            call_command(self.websocket.send(f"|/query roominfo {self.groupchat_name_complete}"))
+            sending.call_command(self.websocket.send(f"|/query roominfo {self.groupchat_name_complete}"))
             response = str(await self.websocket.recv()).split("|")
             if len(response) > 2:
                 while response[1] != "queryresponse" and response[2] != "roominfo":

@@ -1,17 +1,17 @@
-from src.vars import Varlist
-from src.sending import call_command
+import src.vars as vars
+import src.sending as sending
 
 def joinRoom():
-    websocket = Varlist.websocket
-    invite = Varlist.content.split(" ")
+    websocket = vars.Varlist.websocket
+    invite = vars.Varlist.content.split(" ")
 
     room = invite[1].strip()
     host = room.split("-")[1]
-    if host in Varlist.hosts_groupchats:
-        groupchats: list = Varlist.hosts_groupchats[host]
+    if host in vars.Varlist.hosts_groupchats:
+        groupchats: list = vars.Varlist.hosts_groupchats[host]
         groupchats.append(room)
-        Varlist.hosts_groupchats[host] = groupchats
+        vars.Varlist.hosts_groupchats[host] = groupchats
     else:
-        Varlist.hosts_groupchats[host] = [room]
+        vars.Varlist.hosts_groupchats[host] = [room]
 
-    call_command(websocket.send(f"|/join {room}"))
+    sending.call_command(websocket.send(f"|/join {room}"))

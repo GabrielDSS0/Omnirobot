@@ -1,22 +1,22 @@
-from src.sending import *
-from src.vars import Varlist
+import src.sending as sending
+import src.vars as vars
 
 class OtherCommands():
     def __init__(self):
-        self.msgType = Varlist.msgType
-        self.room = Varlist.room
+        self.msgType = vars.Varlist.msgType
+        self.room = vars.Varlist.room
 
-        self.sql_commands = Varlist.sql_commands
+        self.sql_commands = vars.Varlist.sql_commands
 
     def redirect_command(self, inst, name_func: str):
-        self.sender = Varlist.sender
-        self.senderID = Varlist.senderID
-        self.command = Varlist.command
-        self.commandParams = Varlist.commandParams
+        self.sender = vars.Varlist.sender
+        self.senderID = vars.Varlist.senderID
+        self.command = vars.Varlist.command
+        self.commandParams = vars.Varlist.commandParams
         func = getattr(inst, name_func)
         func()
 
     def definetimer(self):
         timer = self.commandParams[-1]
         self.sql_commands.update_timer(timer, self.room)
-        respond(self.msgType, f"O tempo foi alterado para {timer} segundos!", self.senderID, self.room)
+        sending.respond(self.msgType, f"O tempo foi alterado para {timer} segundos!", self.senderID, self.room)

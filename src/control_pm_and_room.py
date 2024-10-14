@@ -1,14 +1,14 @@
 import re
 
-from config import prefix
-from src.vars import Varlist
-from src.commands_list import aliases, allCommands_keys
+import src.vars as vars
+import src.commands_list as cmd_list
+import config
 
 from psclient import toID
 
 class Control():
     def __init__(self) -> None:
-        self.msgSplited = Varlist.msgSplited
+        self.msgSplited = vars.Varlist.msgSplited
         self.content = ""
         self.msgType = ""
         self.commandParams = []
@@ -31,10 +31,10 @@ class Control():
         else:
             return
 
-        Varlist.sender = sender
-        Varlist.senderID = senderID
-        Varlist.content = self.content
-        Varlist.msgType = self.msgType
+        vars.Varlist.sender = sender
+        vars.Varlist.senderID = senderID
+        vars.Varlist.content = self.content
+        vars.Varlist.msgType = self.msgType
 
         is_command = self.determinate_is_a_command()
         if not is_command:
@@ -47,19 +47,19 @@ class Control():
             return is_command
 
     def determinate_is_a_command(self):
-        if self.content[0] == prefix:
+        if self.content[0] == config.prefix:
             command = toID(self.content.split(" ")[0].strip()[1:])
-            self.commandParams = self.content.replace(f"{prefix}{command}", "").strip().split(",")
+            self.commandParams = self.content.replace(f"{config.prefix}{command}", "").strip().split(",")
             self.commandParams = [param.strip() for param in self.commandParams]
         else:
             return
 
-        if command in aliases:
-            command = aliases[command]
+        if command in cmd_list.aliases:
+            command = cmd_list.aliases[command]
 
-        if command in allCommands_keys:
-            Varlist.command = command
-            Varlist.commandParams = self.commandParams
+        if command in cmd_list.allCommands_keys:
+            vars.Varlist.command = command
+            vars.Varlist.commandParams = self.commandParams
         else:
             return
 
@@ -75,18 +75,18 @@ class Control():
             else:
                 self.room = self.room[1:]
                 if self.room[:9] == "groupchat":
-                    Varlist.groupchat_name_complete = self.room
+                    vars.Varlist.groupchat_name_complete = self.room
 
 
         elif self.msgType == "pm":
             self.room = self.commandParams[0].strip()
-            Varlist.groupchat_name_complete = f"groupchat-{self.room}"
+            vars.Varlist.groupchat_name_complete = f"groupchat-{self.room}"
             if self.room[:9] == "groupchat":
                 self.room = re.sub('[^0-9a-zA-Z-]+', '', self.room).lower()
             else:
                 self.room = toID(self.room)
 
-        Varlist.room = self.room
+        vars.Varlist.room = self.room
     
     def determinate_is_a_invite(self):
         invite = self.content.split(" ")

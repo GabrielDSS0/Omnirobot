@@ -1,10 +1,11 @@
 import random
 
-from src.vars import Varlist
+import src.vars as vars
 
-from data.dp.classes.classes import classes_dict
-from data.dp.abilities.abilities import abilities_dict
-from data.dp.abilities.extra_abilities import extrabilities_dict
+import data.dp.classes.classes as classes
+import data.dp.abilities.abilities as abilities
+import data.dp.abilities.extra_abilities as extra_abilities
+
 
 class ActsCalculator():
     def __init__(self, idGame, player, ability, targets, players_classes, team1_classes, 
@@ -25,13 +26,13 @@ class ActsCalculator():
         self.enemyTeam = {}
         self.playerTeam = {}
         self.originalDodgeRate = {}
-        self.sql_commands = Varlist.sql_commands
-        self.room = Varlist.room
+        self.sql_commands = vars.Varlist.sql_commands
+        self.room = vars.Varlist.room
 
         self.end_game = False
 
         self.player_class = self.players_classes[self.player]
-        self.ability_class = abilities_dict[self.ability]
+        self.ability_class = abilities.abilities_dict[self.ability]
 
         if self.player in team1_classes:
             self.playerTeam = team1_classes
@@ -105,7 +106,7 @@ class ActsCalculator():
     def update_damages_and_status(self, player, ability, targets, damages = {}):
         player_class = self.players_classes[player]
         if not damages:
-            damages = abilities_dict[ability].damages.copy() if ability in abilities_dict else extrabilities_dict[ability].damages.copy()
+            damages = abilities.abilities_dict[ability].damages.copy() if ability in abilities.abilities_dict else extra_abilities.extrabilities_dict[ability].damages.copy()
         damagesPerTarget = {}
         enemyTeam = self.enemyTeam if player in self.enemyTeam else self.playerTeam
     
@@ -550,7 +551,7 @@ class ActsCalculator():
         if not (self.ability == "batk") and (self.ability in self.player_class.default_abilities):
             self.makeAction(f"{self.player} usa sua {self.ability_class.type_name}!!")
         elif not (self.ability in self.player_class.default_abilities):
-            class_original = classes_dict[self.ability[:-1]]().name
+            class_original = classes.classes_dict[self.ability[:-1]]().name
             self.makeAction(f"{self.player} utiliza a {self.ability_class.type_name} de {class_original}!")
         else:
             self.makeAction(f"{self.player} usa seu {self.ability_class.type_name}!!")
@@ -961,7 +962,7 @@ class ActsCalculator():
         elif self.ability == "trapper2":
             targets = self.targets[0]
             ability = self.targets[-1]
-            ability_name = abilities_dict[ability].type_name
+            ability_name = abilities.abilities_dict[ability].type_name
             for target in targets:
                 check = self.check_all(target)
                 if check == "DEATH":

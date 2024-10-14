@@ -1,6 +1,6 @@
 import asyncio
 
-from src.vars import Varlist
+import src.vars as vars
 
 def call_command(command):
     try:
@@ -10,7 +10,7 @@ def call_command(command):
     return asyncio.gather(command)
 
 def respondRoom(message, room):
-    websocket = Varlist.websocket
+    websocket = vars.Varlist.websocket
     try:
         asyncio.get_event_loop().is_running()
     except RuntimeError:
@@ -18,7 +18,7 @@ def respondRoom(message, room):
     return asyncio.gather(websocket.send(f"{room}|{message}"))
 
 def respondPM(user, message):
-    websocket = Varlist.websocket
+    websocket = vars.Varlist.websocket
     try:
         asyncio.get_event_loop().is_running()
     except RuntimeError:
