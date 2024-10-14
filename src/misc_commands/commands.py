@@ -209,6 +209,6 @@ class Misc_Commands():
 
         sending.respond(self.msgType, "Timer iniciado!", self.senderID, self.room)
 
-        timer_thread = threading.Timer(time, sending.respond, args=[self.msgType, "Tempo batido!", self.senderID, self.room])
+        timer_thread = threading.Timer(time, sending.respond, args=[self.msgType, "Tempo encerrado!", self.senderID, self.room])
 
         timer_thread.start()
