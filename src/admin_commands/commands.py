@@ -5,18 +5,20 @@ import importlib
 
 import config
 
+import objectsdill
 import src.vars as vars
 import src.sending as sending
 
 class Admin_Commands():
     def __init__(self):
         self.senderID = vars.Varlist.senderID
-    
+
     def redirect_command(self, inst, name_func):
         func = getattr(inst, name_func)
         func()
 
     def kill(self):
+        objectsdill.save()
         logging.debug("Exiting the process... (kill command)")
         sys.exit()
     
@@ -31,7 +33,7 @@ class Admin_Commands():
             return
 
         results_git = results_git.split("\n")
-        
+
         for result in results_git:
             if result.startswith(" "):
                 pipes = result.count("|")

@@ -78,7 +78,7 @@ class User():
             server_msg.Server_Messages().check()
     
     def reconnecting(self):
-        if vars.Varlist.dpGames:
-            for player in vars.Varlist.dpGames:
-                for room in vars.Varlist.dpGames[player]:
+        if vars.Varlist.hosts_groupchats:
+            for player in vars.Varlist.hosts_groupchats:
+                for room in vars.Varlist.hosts_groupchats[player]:
                     sending.call_command(self.websocket.send(f"|/j {room}"))

@@ -30,3 +30,14 @@ def respond(msgType, message, user=None, room=None):
         respondPM(user, message)
     elif msgType == "room":
         respondRoom(message, room)
+
+async def query(type, params):
+    websocket = vars.Varlist.websocket
+
+    await websocket.send(f"|/query {type} {params}")
+    response = str(await websocket.recv()).split("|")
+    if len(response) > 2:
+        while response[1] != "queryresponse" and response[2] != type:
+            response = str(await websocket.recv()).split("|")
+
+        return response

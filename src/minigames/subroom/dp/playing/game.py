@@ -16,7 +16,6 @@ import src.sending as sending
 import src.minigames.subroom.dp.playing.acts.calc as calc
 import src.minigames.subroom.dp.playing.acts.endround as endround
 
-
 class GameCommands():
     def __init__(self, host, groupchat_name_complete):
         self.idGame: int
@@ -25,7 +24,6 @@ class GameCommands():
         self.groupchat_name_complete = groupchat_name_complete
         self.room = vars.Varlist.room
         self.msgType = vars.Varlist.msgType
-        self.websocket = vars.Varlist.websocket
         self.players = []
         self.team1 = []
         self.team2 = []
@@ -61,15 +59,6 @@ class GameCommands():
     def threading_timer(self, time, function, args=[]):
         thread_timer = threading.Timer(time, function, args=args)
         thread_timer.start()
-
-    async def query(self, type, params):
-        sending.call_command(self.websocket.send(f"|/query {type} {params}"))
-        response = str(await self.websocket.recv()).split("|")
-        if len(response) > 2:
-            while response[1] != "queryresponse" and response[2] != type:
-                response = str(await self.websocket.recv()).split("|")
-
-            return response
 
     def startdp(self):
         if self.started:
@@ -208,8 +197,9 @@ class GameCommands():
             return sending.respondPM(self.senderID, "Não há um jogo de Dungeons & Pokémon ocorrendo agora.")
         if not self.players:
             return sending.respondPM(self.senderID, f"Os jogadores ainda não foram definidos.")
-        if not (len(set(self.playersClasses).union(set(self.playersDead))) == len(self.players)):
+        if not (len(set(self.playersClasses).union(set(self.playersDead))) == len(self.players)) or self.round < 1:
             return sending.respondPM(self.senderID, f"As classes ainda não foram todas definidas")
+
         abilitiesPriority = {}
         for player in self.abilities_order:
             act = self.abilities_order[player]
@@ -276,15 +266,20 @@ class GameCommands():
 
     async def makehost(self):
         if not self.started:
-            return sending.respondPM(self.senderID, "Não há jogo de Dungeons & Pokémon nesta subroom atualmente.")
+            return sending.respond(self.msgType, "Não há jogo de Dungeons & Pokémon nesta subroom atualmente.", self.senderID, self.room)
 
         new_host = self.commandParams[-1]
         new_host_id = toID(new_host)
         if new_host_id in self.dpGames:
-            return sending.respond("Este usuário já é um dos hosts dessa sala.")
-        response = await self.query("userdetails", f"{new_host}")
+            return sending.respond(self.msgType, "Este usuário já é um dos hosts dessa sala.", self.senderID, self.room)
+        response = await sending.query("userdetails", f"{new_host}")
 
-        rooms = list((json.loads(response[3])['rooms'].keys()))
+        rooms = json.loads(response[3])['rooms']
+
+        if not rooms:
+            return sending.respond(self.msgType, "Este usuário não está na sala.", self.senderID, self.room)
+        
+        rooms = list(rooms.keys())
         substringRoom = f"{self.groupchat_name_complete}"
 
         for room in rooms:
@@ -329,3 +324,5 @@ class GameCommands():
                 del vars.Varlist.dpGames[host][self.groupchat_name_complete]
             if not (vars.Varlist.dpGames[host]):
                 del vars.Varlist.dpGames[host]
+
+        self.sql_commands.delete_dp_game(self.idGame)

@@ -84,7 +84,7 @@ class Commands_SQL():
         self.params = ()
         self.command = CREATE_TABLE_DP_ACTION
         self.call_execute_sql_command()
-    
+
     def create_table_exception(self):
         self.params = ()
         self.command = CREATE_TABLE_EXCEPTION
@@ -155,7 +155,6 @@ class Commands_SQL():
         SELECT idUser FROM tbl_user WHERE name_id = '{username_id}'
         """
         return self.call_execute_sql_query()
-
         
     def select_username_by_iduser(self, idUser: int):
         self.params = ()
@@ -208,8 +207,8 @@ class Commands_SQL():
 
     def update_userpoints_leaderboard(self, points: float, idUser: int, idRoom: int):
         self.params = ()
-        self.command = (f"""UPDATE tbl_leaderboard SET points = {points} WHERE idUser = {idUser} and idRoom = {idRoom}
-        """)
+        self.command = f"""UPDATE tbl_leaderboard SET points = {points} WHERE idUser = {idUser} and idRoom = {idRoom}
+        """
         self.call_execute_sql_command()
     
     def clear_leaderboard(self, idRoom: int):
@@ -235,6 +234,12 @@ class Commands_SQL():
         self.command = """SELECT * FROM tbl_dp_game
         """
         return self.call_execute_sql_query()
+
+    def delete_dp_game(self, idGame):
+        self.params = ()
+        self.command = f"""DELETE FROM tbl_dp_game where idGame = {idGame}
+        """
+        self.call_execute_sql_command()
     
     def insert_dp_action(self, idGame: int, action: str):
         self.params = (idGame, action)
@@ -253,7 +258,7 @@ class Commands_SQL():
         self.command = f"""DELETE FROM tbl_dp_action WHERE idGame = {idGame}
         """
         self.call_execute_sql_command()
-    
+
     def insert_exception(self, exception, date):
         self.params = (exception, date)
         self.command = """INSERT INTO tbl_exception (exception, date) VALUES (%s,%s)
