@@ -40,6 +40,8 @@ class Admin_Commands():
                 if not pipes:
                     continue
                 result = result.split("|", 1)[0].strip()
+                if not (result.endswith(".py")):
+                    return
                 result = result.replace("/", ".")
                 result = result.replace(".py", "")
                 module = importlib.import_module(result)

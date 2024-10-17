@@ -32,8 +32,6 @@ def init_db():
 async def run():
     init_db()
 
-    pkl_file = config.pkl_file
-
     async for websocket in websockets.connect(config.uri):
         try:
             objectsdill.load()
