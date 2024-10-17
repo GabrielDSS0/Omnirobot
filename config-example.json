@@ -6,6 +6,7 @@
     "rooms": [],
     "prefix": "@",
     "owner": "",
+    "send_html": ["&", "#", "*"],
     "commands_file": "commands.html",
     "remote_repository": "https://github.com/GabrielDSS0/Omnirobot.git",
     "pkl_file": "saveobjects.pkl"

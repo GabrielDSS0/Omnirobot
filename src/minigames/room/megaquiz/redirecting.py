@@ -57,6 +57,17 @@ class RedirectingFunction():
                 return sending.respondPM(self.senderID, "Você já está com uma questão aberta. Caso queira cancelar, digite @cancelquestion.")
 
             if self.senderID not in self.questions or not (self.room in self.questions[self.senderID]) and self.command == "makequestion":
+                response = await sending.query("userdetails", config.username)
+                rooms = list(json.loads(response[3])['rooms'])
+
+                for room in rooms:
+                    room_symbol = room[0]
+                    room_no_symbol = room[1:]
+                    if room_symbol in config.send_html and room_no_symbol == self.room:
+                        break
+                    elif room == self.room:
+                        return sending.respondPM(self.senderID, "Não tenho permissão para mandar caixas HTML nesta sala.")
+
                 question: mq_game.GameCommands = mq_game.GameCommands(self.senderID)
                 vars.Varlist.host = self.senderID
                 if not (self.senderID in self.questions):

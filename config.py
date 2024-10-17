@@ -9,6 +9,7 @@ with open('config.json') as config_file:
     rooms = config_jsondata['rooms']
     prefix = config_jsondata['prefix']
     owner = config_jsondata['owner']
+    send_html = config_jsondata['send_html']
     commands_file = config_jsondata['commands_file']
     remote_repository = config_jsondata['remote_repository']
     pkl_file = config_jsondata['pkl_file']
