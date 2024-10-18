@@ -65,7 +65,7 @@ class RedirectingFunction():
                     room_no_symbol = room[1:]
                     if room_symbol in config.send_html and room_no_symbol == self.room:
                         break
-                    elif room == self.room:
+                    elif (room == self.room) or (room_symbol not in config.send_html and room_no_symbol == self.room):
                         return sending.respondPM(self.senderID, "Não tenho permissão para mandar caixas HTML nesta sala.")
 
                 question: mq_game.GameCommands = mq_game.GameCommands(self.senderID)
