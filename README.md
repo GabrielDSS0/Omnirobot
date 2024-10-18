@@ -7,10 +7,10 @@ Omnirobot é um bot escrito na linguagem de programação Python para o Pokémon
 
 Para executar o script do bot em sua máquina (ou em um servidor remoto), você irá precisar das seguintes ferramentas instaladas:
 
-PostgreSQL 16
-PgAdmin 4 (Normalmente instalado juntamente com o PostgreSQL)
-Python 3.10 ou superior
-git 2.35.1 ou superior
+- PostgreSQL 16
+- PgAdmin 4 (Normalmente instalado juntamente com o PostgreSQL)
+- Python 3.10 ou superior
+- git 2.35.1 ou superior
 
 Siga os seguintes passos:
 
