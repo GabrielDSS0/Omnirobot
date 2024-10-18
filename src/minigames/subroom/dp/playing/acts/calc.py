@@ -1334,6 +1334,11 @@ class ActsCalculator():
                         else:
                             damage = self.damages["DAMAGE"]
                         self.make_default_damage(target, damage, self.player, critical)
+                        check = self.check_all(target)
+                        if check == "DEATH":                    
+                            break
+                        elif check == "END":
+                            return
         
         elif self.ability == "gambler2":
             self.player_class.other_effects["IMUNIDADE"] = {"ROUNDS": 1}
