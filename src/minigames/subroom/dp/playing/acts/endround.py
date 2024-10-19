@@ -337,3 +337,6 @@ class PostRound():
         sending.respondRoom(f"!code {final_code}", self.room)
 
         self.sql_commands.delete_dp_action(self.idGame)
+        
+        if self.end_game:
+            self.sql_commands.delete_dp_game(self.idGame)

@@ -1003,7 +1003,14 @@ class ActsCalculator():
                 times = 0
                 target_class = self.players_classes[target]
                 self.makeAction(f"Três ataques básicos serão utilizados em {target}!!")
+
                 while times != 3:
+                    check = self.check_all(target)
+                    if check == "DEATH":                    
+                        self.makeAction(f"{target} seria golpeado novamente mas está abatido!!")
+                        break
+                    elif check == "END":
+                        return
                     if times == 0:
                         self.makeAction("Primeiro ataque:")
                     elif times == 1:
@@ -1267,12 +1274,13 @@ class ActsCalculator():
                 elif check == "IMMUNITY":
                     self.makeAction(f"{target} seria curado mas está imune!! Nada o afetará nesta rodada")
                     continue
-                dead_in_same_team = True if (target in self.team1_dead and self.player in self.team1_dead) or (target in self.team2_dead and self.team2_dead) else False
-                if dead_in_same_team:
+                dead = True if target in self.players_dead else False
+                if dead:
                     target_class = self.players_dead[target]
                 else:
                     target_class = self.players_classes[target]
-                if dead_in_same_team and target in self.players_dead:
+
+                if dead:
                     target_class.hp = target_class.__class__().hp * 0.3
                     target_class.negative_effects["ENVENENADO"] = {"ROUNDS": -1}
                     self.players_classes[target] = target_class
@@ -1295,6 +1303,7 @@ class ActsCalculator():
                                 target_class.other_effects["TRAPPER3"] = {"VALOR": 20, "JOGADOR": player_trapper3}
                     self.makeAction(f"{self.player} reviveu {target}!!")
                     self.makeAction(f"{target} está com 30% de seu HP e envenenado!")
+
                 elif target in self.players_classes:
                     target_class.positive_effects["FORTALECIDO"] = {"VALOR": 100, "ROUNDS": 2}
                     self.bard_passive(self.playerTeam, target)

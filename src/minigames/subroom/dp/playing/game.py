@@ -175,6 +175,32 @@ class GameCommands():
         targets = []
         if len(self.commandParams) > 2:
             targets = self.commandParams[2:]
+        
+        expected_targets = abilities.abilities_dict[act_name].expected_targets
+        if expected_targets:
+            if not (targets):
+                return sending.respondPM(self.senderID, "Deveria haver ao menos um alvo para esta habilidade.")
+            if not (len(expected_targets) == len(targets)):
+                return sending.respondPM(self.senderID, "Esta habilidade não está com o número de alvos correto.")
+            for enum, expected in enumerate(expected_targets):
+                target = targets[enum]
+
+                if expected == "enemyPlayer":
+                    if not ((target in self.team1 and player in self.team2) or (target in self.team2 and player in self.team1)):
+                        return sending.respondPM(self.senderID, "O alvo deveria ser um inimigo.")
+                elif expected == "allyPlayer":
+                    if not ((target in self.team1_classes and player in self.team1_classes) or (target in self.team2_classes and player in self.team2_classes)):
+                        return sending.respondPM(self.senderID, "O alvo deveria ser um aliado")
+                elif expected == "ability":
+                    if not (target in abilities.abilities_dict):
+                        return sending.respondPM(self.senderID, "O segundo alvo deveria ser uma habilidade.")
+                elif expected == "stat":
+                    if not ((target == "atk") or (target == "td") or (target == "tc")):
+                        return sending.respondPM(self.senderID, "O stat deve ser: **atk**, **td** ou **tc**.")
+                elif expected == "sameTeam":
+                    if not ((target in self.team1 and player in self.team1) or (target in self.team2 and player in self.team2)):
+                        return sending.respondPM(self.senderID, "O alvo deveria ser um aliado.")
+
         if act_name in player_class.cooldowns:
             return sending.respondPM(self.senderID, "Essa habilidade está em cooldown.")
         act: calc.ActsCalculator = calc.ActsCalculator(self.idGame, player, act_name, targets, self.playersClasses, self.team1_classes, self.team2_classes, self.playersDead,
@@ -313,7 +339,7 @@ class GameCommands():
         else:
             equipeVencedora = "equipe 1"
         self.sql_commands.insert_dp_action(self.idGame, f"Acabou!! A {equipeVencedora} venceu a partida!!!!!!")
-        
+
         self.delete_game()
 
     def delete_game(self):
@@ -324,5 +350,3 @@ class GameCommands():
                 del vars.Varlist.dpGames[host][self.groupchat_name_complete]
             if not (vars.Varlist.dpGames[host]):
                 del vars.Varlist.dpGames[host]
-
-        self.sql_commands.delete_dp_game(self.idGame)
