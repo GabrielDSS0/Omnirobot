@@ -359,7 +359,6 @@ class ActsCalculator():
 
             player_class = self.players_classes[player]
 
-                        
             cooldowns_to_remove = []
             for move in player_class.cooldowns:
                 cooldown = player_class.cooldowns[move]
@@ -379,9 +378,14 @@ class ActsCalculator():
                 enemyTeam = self.team1_classes
 
             hpAllies = {}
-            for player in playerTeam:
-                player_class = self.players_classes[player]
-                hpAllies[player] = player_class.hp
+            for teamPlayer in playerTeam:
+                teamPlayer_class = self.players_classes[teamPlayer]
+                hpAllies[teamPlayer] = teamPlayer_class.hp
+
+            hpEnemies = {}
+            for enemyPlayer in enemyTeam:
+                enemyPlayer_class = self.players_classes[enemyPlayer]
+                hpEnemies[enemyPlayer] = enemyPlayer_class.hp
 
             if player_class.name == "Cleric" and self.round != 1:
                 self.makeAction(f"{player} pode curar o aliado com menos hp em 7 de hp, 30% de chance")
@@ -402,24 +406,27 @@ class ActsCalculator():
                 enemy = random.choice(list(enemyTeam))
                 damages, damagePerAlvo = self.update_damages_and_status(player, ability_name, [enemy])
                 self.extra_ability_calc(player, ability_name, [enemy], damages)
+                player_class.other_effects.pop("TRAPPER1")
 
             if "TRAPPER3" in player_class.other_effects:
                 difference = self.check_trapper3(playerTeam)
 
-                if difference < 0:
+                if difference > 0:
                     player_trapper = player_class.other_effects["TRAPPER3"]["JOGADOR"]
                     self.makeAction(f"Ainda há {difference} do escudo de vida do Trapper sobrando!!")
                     self.makeAction(f"{player_trapper} dará então {difference} de dano no inimigo com menos Hp!!")
+
+                    for teamPlayer in playerTeam:
+                        teamPlayer_class = playerTeam[teamPlayer]
+                        teamPlayer_class.other_effects.pop("TRAPPER3")
+
                     ability_name = "trapper3_on"
-                    minHp = min(self.hpEnemies, key=self.hpEnemies.get)
+                    minHp = min(hpEnemies, key=hpEnemies.get)
                     targets = [minHp]
                     damages = {"DAMAGE": difference,
                                "CRITICAL": difference * 1.5}
                     damages, damagePerAlvo = self.update_damages_and_status(player_trapper, ability_name, targets, damages)
                     self.extra_ability_calc(player_trapper, ability_name, targets, damages)
-                for player in playerTeam:
-                    player_class = playerTeam[player]
-                    player_class.other_effects.pop("TRAPPER3")
 
             if "BERSERKER2" in player_class.other_effects:
                 rounds = player_class.other_effects["BERSERKER2"]["ROUNDS"]
@@ -431,7 +438,7 @@ class ActsCalculator():
                     player_class.other_effects["BERSERKER2"]["ROUNDS"] = rounds
 
             if "BERSERKER3" in player_class.other_effects:
-                self.player_class.hp += 15
+                player_class.hp += 15
                 self.makeAction(f"{player} se curará em 15 de HP (habilidade especial)!")
                 if player_class.hp > player_class.__class__().hp:
                     player_class.hp = player_class.__class__().hp
@@ -472,8 +479,14 @@ class ActsCalculator():
             shield = True
 
         trapper3_value -= damage
+
+        if trapper3:
+            target_class.other_effects["TRAPPER3"]["VALOR"] = trapper3_value
+
         if trapper3_value <= 0:
             if trapper3:
+                damage += trapper3_value
+                target_class.other_effects["TRAPPER3"]["VALOR"] = 0
                 self.makeAction(f"A armadilha defensiva do Trapper quebrou, o dano restante ({damage + trapper3_value}) incidirá no escudo de {target}!!")
             if shield_value > 0 and not critical:
                 shield_value -= damage
@@ -1093,6 +1106,11 @@ class ActsCalculator():
         elif self.ability == "berserker2":
             self.player_class.hp -= 10
             self.makeAction(f"{self.player} perdeu 10 de HP")
+            check = self.check_all(self.player)
+            if check == "DEATH":
+                return
+            elif check == "END":
+                return
 
             self.targets = list(self.playerTeam)
 
@@ -1114,6 +1132,12 @@ class ActsCalculator():
         elif self.ability == "berserker3":
             self.player_class.hp -= 30            
             self.makeAction(f"Ele perdeu 30 de hp")
+            check = self.check_all(self.player)
+            if check == "DEATH":
+                return
+            elif check == "END":
+                return
+
             self.player_class.negative_effects.clear()
             self.player_class.other_effects["BERSERKER3"] = {"ROUNDS": 3}            
             self.makeAction(f"Ele limpou seus efeitos negativos e ganhará 15 de HP durante as próximas 3 rodadas")
