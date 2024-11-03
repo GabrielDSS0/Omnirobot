@@ -51,19 +51,22 @@ class Misc_Commands():
         bot_rooms = set((json.loads(response_bot_rooms[3])['rooms'].keys()))
 
         for room in bot_rooms:
-            bot_room = toID(room)
+            room_symbol = room[0]
+            room_no_symbol = room[1:]
+
             for user_room in user_rooms:
                 user_room = toID(user_room)
-                if user_room == bot_room:
+                if (user_room == room_no_symbol) and (room_symbol in config.send_html):
                     with open(config.commands_file, "r", encoding="utf-8") as html_file:
                         html_content = html_file.read()
                         converted = BeautifulSoup(html_content, "html.parser")
                         html_done = html.unescape(str(converted).replace("\n", ""))
 
-                        sending.call_command(self.websocket.send(f"{bot_room}|/pmuhtml {self.senderID},htmlcommands,{html_done}"))
+                        sending.call_command(self.websocket.send(f"{room_no_symbol}|/pmuhtml {self.senderID},htmlcommands,{html_done}"))
+
                         return
         
-        sending.respondPM(self.sender, "Você não está em uma sala em comum com o bot.")
+        sending.respondPM(self.sender, "Você não está em uma sala em que o bot tem os cargos ~, # ou &.")
 
     def addpoints(self, newPoints=1, fromRespond=False):
         if self.msgType:
