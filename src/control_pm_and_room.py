@@ -47,6 +47,9 @@ class Control():
                 return
         else:
             return
+        
+        if not self.content:
+            return
 
         vars.Varlist.sender = sender
         vars.Varlist.senderID = senderID
