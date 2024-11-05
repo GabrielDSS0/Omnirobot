@@ -12,9 +12,7 @@ def joinRoom():
         groupchats: list = vars.Varlist.hosts_groupchats[host]
         groupchats.append(room)
         vars.Varlist.hosts_groupchats[host] = groupchats
-        vars.Varlist.hosts_groupchats[config.owner] = groupchats
     else:
         vars.Varlist.hosts_groupchats[host] = [room]
-        vars.Varlist.hosts_groupchats[config.owner] = groupchats
 
     sending.call_command(websocket.send(f"|/join {room}"))

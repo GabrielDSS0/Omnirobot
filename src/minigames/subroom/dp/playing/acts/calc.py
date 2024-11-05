@@ -93,13 +93,13 @@ class ActsCalculator():
             if taunter in self.players_dead:
                 player_class.negative_effects.pop("PROVOCADO")
                 return targets
-            enemyTeam = self.enemyTeam if player in self.enemyTeam else self.playerTeam
+            enemyTeam = self.enemyTeam if not (player in self.enemyTeam) else self.playerTeam
             targets_set = set(targets)
             enemies_set = set(enemyTeam)
             intersection = targets_set.intersection(enemies_set)
             if intersection:
                 targets = list(targets_set - enemies_set).extend([taunter])
-            player_class.negative_effects.pop("PROVOCADO")
+                player_class.negative_effects.pop("PROVOCADO")
 
         return targets
 
@@ -299,16 +299,15 @@ class ActsCalculator():
                     self.makeAction(f"{target} está queimado agora por conta da passiva de {player}!!")
     
     def mage_2(self, player, target):
-        target_class = self.players_classes[target]
-        if "ESCUDO_DE_FOGO" in target_class.other_effects:
+        player_class = self.players_classes[player]
+        if "ESCUDO_DE_FOGO" in player_class.other_effects:
             ability_name = "escudodefogo"
-            target = self.update_targets(target, [player])[0]
-            target_class.other_effects.pop("ESCUDO_DE_FOGO")
-            self.makeAction(f"{target} tinha um escudo de fogo e ele estourou!")
-            damages, damagePerAlvo = self.update_damages_and_status(target, ability_name, [player])
-            self.extra_ability_calc(target, ability_name, [player], damages)
+            target = self.update_targets(player, [target])[0]
+            player_class.other_effects.pop("ESCUDO_DE_FOGO")
+            self.makeAction(f"{player} tinha um escudo de fogo e ele estourou!")
+            damages, damagePerAlvo = self.update_damages_and_status(player, ability_name, [target])
+            self.extra_ability_calc(player, ability_name, [target], damages)
 
-    
     def paladin_passive(self, player, damage):
         player_class = self.players_classes[player]
         if not(player_class.name == "Paladin"): return
@@ -316,9 +315,9 @@ class ActsCalculator():
         else: playerTeam = self.team2_classes
 
         hpAllies = {}
-        for player in playerTeam:
-            player_class = self.players_classes[player]
-            hpAllies[player] = player_class.hp
+        for teamPlayer in playerTeam:
+            teamPlayer_class = self.players_classes[teamPlayer]
+            hpAllies[teamPlayer] = teamPlayer_class.hp
 
         minHp = min(hpAllies, key=hpAllies.get)
         targets = [minHp]
@@ -404,6 +403,7 @@ class ActsCalculator():
                 self.makeAction(f"{player} ativou sua habilidade de ataque!")
                 ability_name = "trapper1_on"
                 enemy = random.choice(list(enemyTeam))
+                self.makeAction(f"Inimigo escolhido: {enemy}")
                 damages, damagePerAlvo = self.update_damages_and_status(player, ability_name, [enemy])
                 self.extra_ability_calc(player, ability_name, [enemy], damages)
                 player_class.other_effects.pop("TRAPPER1")
@@ -470,7 +470,7 @@ class ActsCalculator():
 
         if "TRAPPER3" in target_class.other_effects:
             trapper3_value = self.check_trapper3(enemyTeam)
-            if trapper3_value <= 0:
+            if trapper3_value > 0:
                 trapper3 = True
                 self.makeAction(f"O dano em {target} atingiu na armadilha defensiva do Trapper!!!")
 
@@ -487,16 +487,18 @@ class ActsCalculator():
             if trapper3:
                 damage += trapper3_value
                 target_class.other_effects["TRAPPER3"]["VALOR"] = 0
-                self.makeAction(f"A armadilha defensiva do Trapper quebrou, o dano restante ({damage + trapper3_value}) incidirá no escudo de {target}!!")
+                self.makeAction(f"A armadilha defensiva do Trapper quebrou, o dano restante ({damage}) incidirá no escudo de {target}!!")
+
             if shield_value > 0 and not critical:
                 shield_value -= damage
                 if shield_value < 0:
                     target_hp += shield_value
-                    shield_value = 0
                     self.makeAction(f"O escudo de {target} quebrou, o dano restante ({damage + shield_value}) incidirá no HP do próprio!!")
+                    shield_value = 0
             elif shield_value > 0 and critical:
                 self.makeAction(f"Pelo dano ser crítico, o dano que iria ser no escudo irá ser no HP!!")
                 target_hp -= damage
+            
             else:
                 target_hp -= damage
 
@@ -522,7 +524,7 @@ class ActsCalculator():
         self.warrior_passive(player, target)
         self.mage_passive(player, target, critical)
         self.paladin_passive(player, damage)
-        self.mage_2(player, target)
+        self.mage_2(target, player)
         self.trapper_passive(player, target)
 
     def basic_attack(self, player, ability, targets):
@@ -877,7 +879,10 @@ class ActsCalculator():
         elif self.ability == "paladin1":
             times = 0
             for target in self.targets:
-                maxHp = max(self.hpEnemies, key=self.hpEnemies.get)
+                maxHp = ""
+                maxHp_value = max(self.hpEnemies.values())
+                if self.hpEnemies[target] == maxHp_value:
+                    maxHp = target
                 self.makeAction(f"{target} é o alvo")
                 while times != 2:
                     check = self.check_all(target)
