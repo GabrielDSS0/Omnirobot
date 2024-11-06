@@ -15,8 +15,8 @@ class Control():
         self.room = ""
 
     def determinate_pm_or_room(self):
-        if len(self.msgSplited) == 4:
-            if self.msgSplited[1] == "noinit":
+        if len(self.msgSplited) == 2:
+            if self.msgSplited[1] == "deinit":
                 room = self.msgSplited[0][1:].strip()
                 hosts_groupchats = vars.Varlist.hosts_groupchats.copy()
                 for user in hosts_groupchats:

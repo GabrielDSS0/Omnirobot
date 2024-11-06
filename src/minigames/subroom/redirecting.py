@@ -1,13 +1,12 @@
 import src.vars as vars
 import src.sending as sending
-import config
 
 def joinRoom():
     websocket = vars.Varlist.websocket
     invite = vars.Varlist.content.split(" ")
 
     room = invite[1].strip()
-    host = room.split("-")[1]
+    host = vars.Varlist.senderID
     if host in vars.Varlist.hosts_groupchats:
         groupchats: list = vars.Varlist.hosts_groupchats[host]
         groupchats.append(room)
