@@ -478,29 +478,41 @@ class ActsCalculator():
             shield_value = target_class.positive_effects["ESCUDO"]["VALOR"]
             shield = True
 
-        trapper3_value -= damage
-
         if trapper3:
+            trapper3_value -= damage
             target_class.other_effects["TRAPPER3"]["VALOR"] = trapper3_value
-
-        if trapper3_value <= 0:
-            if trapper3:
-                damage += trapper3_value
+            if trapper3_value <= 0:
                 target_class.other_effects["TRAPPER3"]["VALOR"] = 0
-                self.makeAction(f"A armadilha defensiva do Trapper quebrou, o dano restante ({damage}) incidirá no escudo de {target}!!")
+                if shield_value > 0 and not critical:
+                    self.makeAction(f"A armadilha defensiva do Trapper quebrou, o dano restante ({damage}) incidirá no escudo de {target}!!")
+                    shield_value -= damage
+                    if shield_value < 0:
+                        target_hp += shield_value
+                        self.makeAction(f"O escudo de {target} quebrou, o dano restante ({damage + shield_value}) incidirá no HP do próprio!!")
+                        shield_value = 0
 
+                elif shield_value > 0 and critical:
+                    self.makeAction(f"Pelo dano ser crítico, o dano que iria ser no escudo irá ser no HP!!")
+                    target_hp -= damage
+                
+                else:
+                    target_hp -= damage
+        
+        elif shield:
             if shield_value > 0 and not critical:
+                self.makeAction(f"A armadilha defensiva do Trapper quebrou, o dano restante ({damage}) incidirá no escudo de {target}!!")
                 shield_value -= damage
                 if shield_value < 0:
                     target_hp += shield_value
                     self.makeAction(f"O escudo de {target} quebrou, o dano restante ({damage + shield_value}) incidirá no HP do próprio!!")
                     shield_value = 0
+
             elif shield_value > 0 and critical:
                 self.makeAction(f"Pelo dano ser crítico, o dano que iria ser no escudo irá ser no HP!!")
                 target_hp -= damage
-            
-            else:
-                target_hp -= damage
+        
+        else:
+            target_hp -= damage
 
         if shield:
             if shield_value == 0:
@@ -978,21 +990,22 @@ class ActsCalculator():
             self.makeAction(f"{self.player} ganhou 10 de escudo")
         
         elif self.ability == "trapper2":
-            targets = self.targets[0]
+            target = self.targets[0]
             ability = self.targets[-1]
             ability_name = abilities.abilities_dict[ability].type_name
-            for target in targets:
-                check = self.check_all(target)
-                if check == "DEATH":
-                    continue
-                elif check == "END":
-                    return
-                elif check == "IMMUNITY":
-                    self.makeAction(f"{target} seria o alvo mas está imune!! Nada o afetará nesta rodada")
-                    continue
-                target_class = self.players_classes[target]
-                target_class.other_effects["TRAPPER2"] = {"ABILITY": ability, "ROUNDS": 2}
-                self.makeAction(f"{target} teve sua {ability_name} bloqueada durante essa rodada e a próxima")
+
+            check = self.check_all(target)
+            if check == "DEATH":
+                return
+            elif check == "END":
+                return
+            elif check == "IMMUNITY":
+                self.makeAction(f"{target} seria o alvo mas está imune!! Nada o afetará nesta rodada")
+                return
+
+            target_class = self.players_classes[target]
+            target_class.other_effects["TRAPPER2"] = {"ABILITY": ability, "ROUNDS": 2}
+            self.makeAction(f"{target} teve sua {ability_name} bloqueada durante essa rodada e a próxima")
         
         elif self.ability == "trapper3":
             self.targets = list(self.playerTeam)
