@@ -69,7 +69,7 @@ class PostRound():
                 player_class.other_effects.clear()
                 player_class.gold = 0
                 player_class.cooldowns.clear()
-                self.makeAction(f"{player} morreu!!")
+                self.makeAction(f"{player} foi abatido!!")
             return True
         return
     

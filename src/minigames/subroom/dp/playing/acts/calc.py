@@ -480,15 +480,19 @@ class ActsCalculator():
 
         if trapper3:
             trapper3_value -= damage
+            damage = trapper3_value
             target_class.other_effects["TRAPPER3"]["VALOR"] = trapper3_value
-            if trapper3_value <= 0:
+            if trapper3_value < 0 and damage < 0:
+                damage *= -1
                 target_class.other_effects["TRAPPER3"]["VALOR"] = 0
                 if shield_value > 0 and not critical:
                     self.makeAction(f"A armadilha defensiva do Trapper quebrou, o dano restante ({damage}) incidirá no escudo de {target}!!")
                     shield_value -= damage
-                    if shield_value < 0:
-                        target_hp += shield_value
-                        self.makeAction(f"O escudo de {target} quebrou, o dano restante ({damage + shield_value}) incidirá no HP do próprio!!")
+                    damage = shield_value
+                    if shield_value < 0 and damage < 0:
+                        damage *= -1
+                        self.makeAction(f"O escudo de {target} quebrou, o dano restante ({damage}) incidirá no HP do próprio!!")
+                        target_hp -= damage
                         shield_value = 0
 
                 elif shield_value > 0 and critical:
@@ -500,17 +504,19 @@ class ActsCalculator():
         
         elif shield:
             if shield_value > 0 and not critical:
-                self.makeAction(f"A armadilha defensiva do Trapper quebrou, o dano restante ({damage}) incidirá no escudo de {target}!!")
+                self.makeAction(f"O dano atingirá o escudo de {target}!")
                 shield_value -= damage
-                if shield_value < 0:
-                    target_hp += shield_value
-                    self.makeAction(f"O escudo de {target} quebrou, o dano restante ({damage + shield_value}) incidirá no HP do próprio!!")
+                damage = shield_value
+                if shield_value < 0 and damage < 0:
+                    damage *= -1
+                    self.makeAction(f"O escudo de {target} quebrou, o dano restante ({damage}) incidirá no HP do próprio!!")
+                    target_hp -= damage
                     shield_value = 0
 
             elif shield_value > 0 and critical:
                 self.makeAction(f"Pelo dano ser crítico, o dano que iria ser no escudo irá ser no HP!!")
                 target_hp -= damage
-        
+    
         else:
             target_hp -= damage
 
