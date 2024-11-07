@@ -285,7 +285,7 @@ class GameCommands():
     def trapper(self):
         target = self.commandParams[1].strip()
         if not (target in self.playersClasses):
-            return sending.respondPM(self.senderID, f"{self.senderID} não está dentre os jogadores da partida.")
+            return sending.respondPM(self.senderID, f"{target} não está dentre os jogadores da partida.")
         target_class = self.playersClasses[target]
         target_class.other_effects["TRAPPER00"] = {"ROUNDS": 1, "VEZES": 2}
         sending.respondPM(self.senderID, f"{target} está com a armadilha!!")
