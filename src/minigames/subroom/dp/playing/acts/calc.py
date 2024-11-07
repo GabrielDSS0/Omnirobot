@@ -98,7 +98,8 @@ class ActsCalculator():
             enemies_set = set(enemyTeam)
             intersection = targets_set.intersection(enemies_set)
             if intersection:
-                targets = list(targets_set - enemies_set).extend([taunter])
+                targets = list(targets_set - enemies_set)
+                targets.extend([taunter])
                 player_class.negative_effects.pop("PROVOCADO")
 
         return targets
