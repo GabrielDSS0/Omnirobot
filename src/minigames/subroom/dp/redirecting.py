@@ -40,9 +40,8 @@ class RedirectingFunction():
         if need_room and self.msgType == "room" and len(self.commandParams) < (len(command_params_default) - 1):
             return sending.respondRoom(f"Uso: {config.prefix}{self.command} **{', '.join(command_params_default[1:])}**", self.groupchat_name_complete)
 
-        elif need_room and self.msgType != "room" and len(self.commandParams) < len(command_params_default) and self.senderID in self.hosts_groupchats:
-            if len(self.hosts_groupchats[self.senderID]) > 1:
-                return sending.respond(self.msgType, f"Uso: {config.prefix}{self.command} **{', '.join(command_params_default)}**", self.senderID, self.groupchat_name_complete)
+        elif self.msgType != "room" and len(self.commandParams) < len(command_params_default) and self.senderID in self.hosts_groupchats:
+            return sending.respond(self.msgType, f"Uso: {config.prefix}{self.command} **{', '.join(command_params_default)}**", self.senderID, self.groupchat_name_complete)
 
         if command_permission == "host" or command_permission == "adm" or (command_permission == "general" and self.msgType == "room"):
             permission = await self.verify_perm(self.senderID)
