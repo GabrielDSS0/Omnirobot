@@ -83,20 +83,5 @@ class RedirectingFunction():
         else:
             return "INVALID"
         
-        if self.groupchat_name_complete in rooms:
-            sending.call_command(self.websocket.send(f"|/query roominfo {self.groupchat_name_complete}"))
-            response = str(await self.websocket.recv()).split("|")
-            if len(response) > 2:
-                while response[1] != "queryresponse" and response[2] != "roominfo":
-                    response = str(await self.websocket.recv()).split("|")
-
-                auths = list((json.loads(response[3])['auth'].values()))
-
-            substringSender = f"{senderID}"
-
-            for group in auths:
-                if substringSender in group:
-                    return True
-            return "INVALID"
-        else:
+        if not (self.groupchat_name_complete in rooms):
             return "INVALIDROOM"

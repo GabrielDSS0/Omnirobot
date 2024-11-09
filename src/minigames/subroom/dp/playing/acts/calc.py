@@ -109,7 +109,7 @@ class ActsCalculator():
         if not damages:
             damages = abilities.abilities_dict[ability].damages.copy() if ability in abilities.abilities_dict else extra_abilities.extrabilities_dict[ability].damages.copy()
         damagesPerTarget = {}
-        enemyTeam = self.enemyTeam if player in self.enemyTeam else self.playerTeam
+        enemyTeam = self.enemyTeam if not(player in self.enemyTeam) else self.playerTeam
     
         for damage in damages:
             damage_value = damages[damage]
@@ -126,6 +126,8 @@ class ActsCalculator():
                 continue
             target_class = self.players_classes[target]
 
+            damagesPerTarget[target] = {}
+
             for damage in damages:
                 damage_value = damages[damage]
                 if "PROTEGIDO" in target_class.positive_effects:
@@ -134,8 +136,7 @@ class ActsCalculator():
                 if "VULNERAVEL" in target_class.negative_effects:
                     value = target_class.negative_effects["VULNERAVEL"]["VALOR"]
                     damage_value += (damage_value * (value / 100))
-                damages[damage] = damage_value
-                damagesPerTarget[target] = damages
+                damagesPerTarget[target][damage] = damage_value
 
         return damages, damagesPerTarget
 
@@ -677,7 +678,8 @@ class ActsCalculator():
         
         elif self.ability == "mage1":
             self.targets = list(self.enemyTeam)
-            
+            self.damages, self.damagePerTarget = self.update_damages_and_status(self.player, self.ability, self.targets)
+
             self.makeAction("Todos os adversários serão atingidos")
             for target in self.targets:
                 check = self.check_all(target)
@@ -697,9 +699,9 @@ class ActsCalculator():
                     critical_rate = self.player_class.cr
                     critical = self.critical(critical_rate, self.player)
                     if critical:
-                        damage = self.damages["CRITICAL"]
+                        damage = self.damagePerTarget[target]["CRITICAL"]
                     else:
-                        damage = self.damages["DAMAGE"]
+                        damage = self.damagePerTarget[target]["DAMAGE"]
                     self.make_default_damage(target, damage, self.player, critical)
         
         elif self.ability == "mage2":
@@ -858,13 +860,13 @@ class ActsCalculator():
                     critical_rate = self.player_class.cr
                     critical = self.critical(critical_rate, self.player)
                     if critical and negative_effects:
-                        damage = self.damages["DOUBLE_CRITICAL"]
+                        damage = self.damagePerTarget[target]["DOUBLE_CRITICAL"]
                     elif critical and not negative_effects:
-                        damage = self.damages["CRITICAL"]
+                        damage = self.damagePerTarget[target]["CRITICAL"]
                     elif not critical and negative_effects:
-                        damage = self.damages["DOUBLE_DAMAGE"]
+                        damage = self.damagePerTarget[target]["DOUBLE_DAMAGE"]
                     elif not critical and not negative_effects:
-                        damage = self.damages["DAMAGE"]
+                        damage = self.damagePerTarget[target]["DAMAGE"]
                     self.make_default_damage(target, damage, self.player, critical)
         
         elif self.ability == "ninja2":
