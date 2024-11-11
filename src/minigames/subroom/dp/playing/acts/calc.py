@@ -147,11 +147,12 @@ class ActsCalculator():
 
     def dodge(self, target, player):
         player_class = self.players_classes[player]
-        if player_class.name == "Archer":
-            return
         target_class = self.players_classes[target]
         self.makeAction(f"{player} pode errar a habilidade que utilizará em {target}!")
         dr = target_class.dr
+        if player_class.name == "Archer": dr -= 10
+        self.makeAction(f"Chance de desvio: {dr}%")
+
         roll = self.roll(100)
         if roll <= dr:
             self.makeAction("Desviou!!")
@@ -178,6 +179,7 @@ class ActsCalculator():
 
     def critical(self, cr, player):
         self.makeAction(f"{player} pode causar dano crítico!!")
+        self.makeAction(f"Chance de crítico: {cr}%")
         player_class = self.players_classes[player]
         roll = self.roll(100)
         if roll <= cr:

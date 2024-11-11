@@ -77,8 +77,8 @@ class Archer(ClassDefault):
         super().__init__()
         self.name = "Archer"
         self.hp = 50
-        self.atk = 50
-        self.cr = 40
+        self.atk = 40
+        self.cr = 50
         self.dr = 40
         self.default_abilities = ["batk", "archer1", "archer2", "archer3"]
 
