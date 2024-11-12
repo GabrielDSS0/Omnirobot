@@ -51,7 +51,8 @@ CREATE_TABLE_EXCEPTION = """
 CREATE TABLE IF NOT EXISTS tbl_exception (
 idException serial PRIMARY KEY NOT NULL,
 exception text,
-date text
+date text,
+lastmsg text
 )
 """
 
@@ -259,9 +260,9 @@ class Commands_SQL():
         """
         self.call_execute_sql_command()
 
-    def insert_exception(self, exception, date):
-        self.params = (exception, date)
-        self.command = """INSERT INTO tbl_exception (exception, date) VALUES (%s,%s)
+    def insert_exception(self, exception, date, lastmsg):
+        self.params = (exception, date, lastmsg)
+        self.command = """INSERT INTO tbl_exception (exception, date, lastmsg) VALUES (%s,%s,%s)
         """
         self.call_execute_sql_command()
 

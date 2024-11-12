@@ -45,8 +45,8 @@ async def run():
             e = traceback.format_exc()
             now = datetime.now()
             now_format = now.strftime("%d/%m/%Y %H:%M:%S")
-            vars.Varlist.sql_commands.insert_exception(e, now_format)
-
+            msg = '|'.join(vars.Varlist.msgSplited)
+            vars.Varlist.sql_commands.insert_exception(e, now_format, msg)
         finally:
             objectsdill.save()
 
