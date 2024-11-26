@@ -66,7 +66,7 @@ class Misc_Commands():
 
                         return
         
-        sending.respondPM(self.sender, "Você não está em uma sala em que o bot tem os cargos ~, # ou &.")
+        sending.respondPM(self.sender, "Você não está em uma sala em que o bot tem os cargos *, # ou ~.")
 
     def addpoints(self, newPoints=1, fromRespond=False):
         if self.msgType:
