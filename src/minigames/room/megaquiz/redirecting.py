@@ -35,7 +35,7 @@ class RedirectingFunction():
         if need_room and self.msgType == "room" and len(self.commandParams) < (len(command_params_default) - 1):
             return sending.respondRoom(f"Uso: {config.prefix}{self.command} **{', '.join(command_params_default[1:])}**", self.room)
         
-        elif need_room and self.msgType != "room" and len(self.commandParams) < len(command_params_default) and self.senderID not in self.questions:
+        elif self.msgType != "room" and len(self.commandParams) < len(command_params_default) and self.senderID not in self.questions:
             return sending.respond(self.msgType, f"Uso: {config.prefix}{self.command} **{', '.join(command_params_default)}**", self.senderID, self.room)
 
         if command_permission == "host" or command_permission == "adm" or (command_permission == "general" and self.msgType == "room"):
