@@ -156,6 +156,9 @@ class Misc_Commands():
         sending.respond(self.msgType, "Pontos da sala limpos!", self.senderID, self.room)
     
     def leaderboard(self, inQuestion=False):
+        if not(self.commandParams[0] in config.rooms):
+            return sending.respond(self.msgType, "Não estou na sala descrita.", self.senderID, self.room)
+
         idRoom = self.sql_commands.select_idroom_by_nameid(self.room)[0][0]
         lb_fetch = self.sql_commands.select_all_leaderboard(idRoom)
         lb = {}
