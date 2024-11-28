@@ -18,5 +18,13 @@ class OtherCommands():
 
     def definetimer(self):
         timer = self.commandParams[-1]
+        try:
+            timer = float(timer)
+        except:
+            return sending.respond(self.msgType, "O tempo inserido não é um número.", self.senderID, self.room)
+        
+        if timer <= 0:
+            return sending.respond(self.msgType, "O tempo inserido não é um número positivo.", self.senderID, self.room)
+
         self.sql_commands.update_timer(timer, self.room)
         sending.respond(self.msgType, f"O tempo foi alterado para {timer} segundos!", self.senderID, self.room)
