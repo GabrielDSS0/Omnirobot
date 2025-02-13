@@ -1,25 +1,27 @@
-from psycopg2.extensions import connection, cursor as cs
+from psycopg2.extensions import connection
+from psycopg2.extensions import cursor as cs
 from websockets import WebSocketClientProtocol
 
+
 class Varlist:
-   websocket: WebSocketClientProtocol = None
-   db: connection = None
-   cursor: cs = None
-   sql_commands = None
-   
-   msgSplited: list =  []
-   commandParams: list = []
-   command: str = ""
-   sender: str = ""
-   senderID: str = ""
-   content: str = ""
-   msgType: str = ""
-   
-   room: str = ""
-   groupchat_name_complete: str = ""
+	websocket: WebSocketClientProtocol = None
+	db: connection = None
+	cursor: cs = None
+	sql_commands = None
 
-   questions: dict = {}
-   hosts_groupchats: dict = {}
-   dpGames: dict = {}
+	msgSplited: list = []
+	commandParams: list = []
+	command: str = ""
+	sender: str = ""
+	senderID: str = ""
+	content: str = ""
+	msgType: str = ""
 
-   modules_to_reload = []
+	room: str = ""
+	groupchat_name_complete: str = ""
+
+	questions: dict = {}
+	hosts_groupchats: dict = {}
+	dpGames: dict = {}
+
+	modules_to_reload = []
